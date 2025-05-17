@@ -1,6 +1,4 @@
 // import { Product as PrismaProduct } from "@prisma/client"
-import { Transaction as PrismaTransaction } from "@prisma/client"
-
 
 
 export interface StatLive {
