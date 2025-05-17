@@ -30,7 +30,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     const [editingClientId, setEditingClientId] = useState<string | null>(null)
     const [clients, setClients] = useState<Client[]>([])
     const [live, setLive] = useState<Live | null>(null)
-   
+ 
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
@@ -79,7 +79,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
           if (email) {
             fetchClients();
           }
- }, [email, params]); 
+        }, [email]);
+
     //Search
 
     const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,7 +151,7 @@ useEffect(() => {
   if (email) {
     fetchLive();
   }
- }, [email, params]); 
+}, [email]);
 
 
 

@@ -35,9 +35,32 @@ const Page = () => {
   };
 
 
-  useEffect(() => {
+useEffect(() => {
+  const loadLives = async () => {
+    try {
+      if (!email) {
+        throw new Error('Email requis');
+      }
+
+      setLoading(true); // Si tu as un état loading
+      const data = await readLives(email);
+      if (data) {
+        setLives(data);
+        setCurrentPage(1); // Réinitialiser à la première page
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des sessions :', error);
+    
+    } finally {
+      setLoading(false); // Ne pas oublier de désactiver loading
+    }
+  };
+
+  if (email) {
     loadLives();
-  }, [email]);
+  }
+}, [email]);
+
 
     useEffect(() => {
     const loadLives = async () => {
