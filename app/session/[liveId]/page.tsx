@@ -119,16 +119,19 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
           console.log('Liste des clients mise à jour');
 
           // Réinitialiser la recherche
-          setSearchQuery('');
-          setSearchResults([]);
-          toast.success(`Client ${client.name} ajouté à la session.`);
-        } catch (error: any) {
-          console.error('Erreur lors de l’ajout du client:', error);
-          toast.error(error.message || 'Erreur lors de l’ajout du client.');
-        } finally {
-          setLoading(false); // Stop loading
-        }
-      };
+       // Réinitialiser la recherche
+    setSearchQuery('');
+    setSearchResults([]);
+    toast.success(`Client ${client.name} ajouté à la session.`);
+  } catch (error: unknown) { // Remplacement de any par unknown
+    console.error('Erreur lors de l’ajout du client:', error);
+    // Vérification de type pour accéder à error.message
+    const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l’ajout du client.';
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false); // Stop loading
+  }
+};
 
 //Session Live
 
