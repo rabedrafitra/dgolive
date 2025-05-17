@@ -169,7 +169,7 @@ useEffect(() => {
           <div>
             <EmptyState
               message="Pas encore de session LIVE"
-              IconComponent="PackageSearch"
+              IconComponent="CirclePlay"
             />
           </div>
         ) : (

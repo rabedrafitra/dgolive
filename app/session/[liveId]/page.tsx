@@ -457,7 +457,7 @@ const handlePrint = () => {
                             <div>
                                 <EmptyState
                                     message='Pas encore de Client'
-                                    IconComponent='PackageSearch'
+                                    IconComponent="User"
                                 />
                             </div>
                         ) : (
