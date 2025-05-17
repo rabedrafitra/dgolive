@@ -1,6 +1,6 @@
-import { ProductOverviewStats,  StatLive } from '@/type'
+import { StatLive } from '@/type'
 import React, { useEffect, useState } from 'react'
-import { getProductOverviewStats, getStatLive } from '../actions'
+import {  getStatLive } from '../actions'
 import { CirclePlay, User, DollarSign, ShoppingCart, Tag } from 'lucide-react'
 
 const ProductOverview = ({ email }: { email: string }) => {

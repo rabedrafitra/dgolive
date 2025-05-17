@@ -17,6 +17,13 @@ import { Transaction as PrismaTransaction } from "@prisma/client"
 //     imageUrl?: string;
 // }
 
+export interface StatLive {
+  clientCount: number; // Remplace totalProducts et stock normal
+  liveSessionCount: number; // Remplace totalCategories (sessions live par mois)
+  totalRevenue: number; // Remplace totalCategories (revenu par mois)
+  orderCount: number; // Remplace totalTransactions
+}
+
 export interface OrderItem {
     productId: string;
     quantity: number;
