@@ -3,7 +3,6 @@ import { readClientsByLiveId, searchClients, addClientToLive, readLiveById, crea
 import Wrapper from '@/app/components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { Client, Live } from '@prisma/client'
-import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { Pencil, Trash, PlusCircle } from 'lucide-react'
@@ -14,6 +13,7 @@ import ClientModal from '@/app/components/ClientModal'
 import OrderModal from '@/app/components/OrderModal'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import Image from 'next/image'
 
 
 
@@ -32,14 +32,14 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     const [editingClientId, setEditingClientId] = useState<string | null>(null)
     const [clients, setClients] = useState<Client[]>([])
     const [live, setLive] = useState<Live | null>(null)
-    const router = useRouter();
+ 
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
 
-const [orders, setOrders] = useState<{
-  [clientId: string]: { id: string; ref: string; price: number }[];
-}>({});
+  const [orders, setOrders] = useState<{
+    [clientId: string]: { id: string; ref: string; price: number }[];
+  }>({});
 
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
     const [invoiceClient, setInvoiceClient] = useState<Client | null>(null)
@@ -64,30 +64,46 @@ const [orders, setOrders] = useState<{
     }
 
     useEffect(() => {
-        fetchClients()
-    }, [email])
+          const fetchClients = async () => {
+            try {
+              const { liveId } = await params;
+              if (email) {
+                const fetchedClients = await readClientsByLiveId(liveId, email);
+                if (fetchedClients) {
+                  setClients(fetchedClients);
+                }
+              }
+            } catch (error) {
+              console.error("Erreur lors du chargement des clients:", error);
+            }
+          };
+
+          if (email) {
+            fetchClients();
+          }
+        }, [email]);
 
     //Search
 
     const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+      const query = e.target.value;
+      setSearchQuery(query);
 
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+      if (query.length < 2) {
+        setSearchResults([]);
+        return;
+      }
 
-    try {
-      setLoading(true);
-      const results = await searchClients(query);
-      setSearchResults(results);
-    } catch (error) {
-      toast.error('Erreur lors de la recherche des clients.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        const results = await searchClients(query);
+        setSearchResults(results);
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false);
+      }
+    };
 
 
   // Handle adding a client to the live session
@@ -118,46 +134,70 @@ const [orders, setOrders] = useState<{
       };
 
 //Session Live
-const fetchLive = async () => {
+
+useEffect(() => {
+  const fetchLive = async () => {
     try {
-      const { liveId } = await params
+      const { liveId } = await params;
       if (email) {
-        const fetchedLive = await readLiveById(liveId, email)
-        if (fetchedLive) setLive(fetchedLive)
+        const fetchedLive = await readLiveById(liveId, email);
+        if (fetchedLive) {
+          setLive(fetchedLive);
+        }
       }
     } catch (error) {
-      console.error(error)
+      console.error("Erreur lors du chargement du live:", error);
     }
-  }
+  };
 
-  useEffect(() => {
-    fetchLive()
-  }, [email])
+  if (email) {
+    fetchLive();
+  }
+}, [email]);
+
 
 
 
   //Commandes
-    const fetchOrder = async () => {
+    // const fetchOrder = async () => {
 
-               try {
-            const { liveId } = await params
-            if (email) {
-                const fetchedOrder = await getOrdersByLiveId(liveId);
+    //            try {
+    //         const { liveId } = await params
+    //         if (email) {
+    //             const fetchedOrder = await getOrdersByLiveId(liveId);
         
-                if (fetchedOrder) {
-                    setOrders(fetchedOrder)
+    //             if (fetchedOrder) {
+    //                 setOrders(fetchedOrder)
                     
-                }
-            }
-        } catch (error) {
-            console.error(error)
-        }
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error(error)
+    //     }
 
+    // }
+
+ useEffect(() => {
+  const fetchOrder = async () => {
+    try {
+      const { liveId } = await params;
+      if (!email) {
+        throw new Error("Email requis");
+      }
+
+      const fetchedOrder = await getOrdersByLiveId(liveId);
+      if (fetchedOrder) {
+        setOrders(fetchedOrder);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des commandes :", error);
     }
+  };
 
-     useEffect(() => {
-      fetchOrder()
-    }, [email])
+  if (email) {
+    fetchOrder();
+  }
+}, [email, params]);
 
 
 //Ouverture et Fermeture des Modal
@@ -319,48 +359,49 @@ const handlePrint = () => {
   }
 }
 
-const handleDownloadPdf = async () => {
-  const input = document.getElementById('invoice-content')
-  if (!input) return
-  const canvas = await html2canvas(input)
-  const imgData = canvas.toDataURL('image/png')
-  const pdf = new jsPDF()
-  const imgProps = pdf.getImageProperties(imgData)
-  const pdfWidth = pdf.internal.pageSize.getWidth()
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-  pdf.save('facture.pdf')
+// const handleDownloadPdf = async () => {
+//   const input = document.getElementById('invoice-content')
+//   if (!input) return
+//   const canvas = await html2canvas(input)
+//   const imgData = canvas.toDataURL('image/png')
+//   const pdf = new jsPDF()
+//   const imgProps = pdf.getImageProperties(imgData)
+//   const pdfWidth = pdf.internal.pageSize.getWidth()
+//   const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+//   pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+//   pdf.save('facture.pdf')
 
 
   
-//Impression multiple
+// //Impression multiple
   
 
-}
-const generateAllInvoicesPDF = async () => {
-  const container = document.getElementById("all-invoices-container");
-  if (!container) return;
+// }
 
-  const pdf = new jsPDF("p", "mm", "a4");
-  const invoiceElements = Array.from(container.querySelectorAll(".single-invoice"));
+// const generateAllInvoicesPDF = async () => {
+//   const container = document.getElementById("all-invoices-container");
+//   if (!container) return;
 
-  for (let i = 0; i < invoiceElements.length; i++) {
-    const el = invoiceElements[i] as HTMLElement;
-    const canvas = await html2canvas(el);
-    const imgData = canvas.toDataURL("image/png");
+//   const pdf = new jsPDF("p", "mm", "a4");
+//   const invoiceElements = Array.from(container.querySelectorAll(".single-invoice"));
 
-    const x = 10;
-    const y = (i % 6) * 45 + 10; // 6 factures par page (chaque ~45mm de hauteur)
+//   for (let i = 0; i < invoiceElements.length; i++) {
+//     const el = invoiceElements[i] as HTMLElement;
+//     const canvas = await html2canvas(el);
+//     const imgData = canvas.toDataURL("image/png");
 
-    if (i > 0 && i % 6 === 0) {
-      pdf.addPage();
-    }
+//     const x = 10;
+//     const y = (i % 6) * 45 + 10; // 6 factures par page (chaque ~45mm de hauteur)
 
-    pdf.addImage(imgData, "PNG", x, y, 190, 40);
-  }
+//     if (i > 0 && i % 6 === 0) {
+//       pdf.addPage();
+//     }
 
-  pdf.save("factures.pdf");
-};
+//     pdf.addImage(imgData, "PNG", x, y, 190, 40);
+//   }
+
+//   pdf.save("factures.pdf");
+// };
 
     return (
       <Wrapper>
@@ -566,7 +607,13 @@ const generateAllInvoicesPDF = async () => {
                                               <div className="modal-box max-w-2xl" id="invoice-content">
                                                 {/* En-tête logo + nom association */}
                                                 <div className="flex items-center gap-4 mb-6">
-                                                  <img src="/innovas.png" alt="Logo Association" className="w-12 h-12 object-contain" />
+                                                  <Image
+                                                    src="/innovas.png"
+                                                    alt="Logo Association"
+                                                    width={48}
+                                                    height={48}
+                                                    className="object-contain"
+                                                  />
                                                   <div>
                                                     <h2 className="text-xl font-bold">Innovas Management</h2>
                                                     <p className="text-sm text-gray-600">Facture client</p>
@@ -628,7 +675,7 @@ const generateAllInvoicesPDF = async () => {
               try {
                 await updateOrderItem(order.id, order.ref, order.price);
                 toast.success("Article mis à jour !");
-              } catch (err) {
+              } catch (error) {
                 toast.error("Erreur lors de la mise à jour.");
               }
             }}
@@ -652,14 +699,21 @@ const generateAllInvoicesPDF = async () => {
 </table>
 
 
-                                                <div className="modal-action print:hidden">
-                                                  <form method="dialog">
-                                                    <button className="btn">Fermer</button>
-                                                  </form>
-                                                  <button className="btn btn-outline" onClick={() => window.print()}>
-                                                    Imprimer / PDF
+                                               <div className="flex justify-end items-center gap-4 mt-6 print:hidden">
+                                                <form method="dialog">
+                                                  <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition">
+                                                    Fermer
                                                   </button>
-                                                </div>
+                                                </form>
+
+                                               <button className="btn btn-outline" onClick={() => window.print()}>
+                                                    🖨️ Imprimer / PDF
+                                                  </button>
+                                                   <button className="btn btn-outline hidden" onClick={() => handlePrint()}>
+                                                  cacher
+                                                  </button>
+                                              </div>
+
                                               </div>
                                             </dialog>
                                           )}

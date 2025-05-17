@@ -34,8 +34,34 @@ const Page = () => {
     }
   };
 
+
   useEffect(() => {
     loadLives();
+  }, [email]);
+
+    useEffect(() => {
+    const loadLives = async () => {
+      try {
+        if (!email) throw new Error("Email requis");
+
+        setLoading(true);
+        const data = await readLives(email);
+        console.log("Sessions reçues:", data);
+
+        setLives(data || []);
+        setCurrentPage(1); // Réinitialiser la pagination
+        
+      } catch (err) {
+        console.error("Erreur lors de la récupération des sessions live:", err);
+        
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (email) {
+      loadLives();
+    }
   }, [email]);
 
   const openCreateModal = () => {

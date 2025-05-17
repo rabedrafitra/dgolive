@@ -1,7 +1,7 @@
 import { StatLive } from '@/type'
 import React, { useEffect, useState } from 'react'
 import {  getStatLive } from '../actions'
-import { CirclePlay, User, DollarSign, ShoppingCart, Tag } from 'lucide-react'
+import { CirclePlay, User, DollarSign, ShoppingCart} from 'lucide-react'
 
 const ProductOverview = ({ email }: { email: string }) => {
     const [stats, setStats] = useState<StatLive | null>(null)
