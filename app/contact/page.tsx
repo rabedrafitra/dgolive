@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Wrapper from '../components/Wrapper';
-import { Phone, Mail, MapPin, Camera, ShoppingCart, BarChart, Facebook, Linkedin, Github } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Linkedin, Github } from 'lucide-react';
 
 export default function ContactPage() {
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);

@@ -10,30 +10,29 @@ const StockSummaryTable = ({ email }: { email: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSummary = async () => {
-    try {
-      if (!email) {
-        throw new Error('Email requis');
+   useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        if (!email) {
+          throw new Error('Email requis');
+        }
+        setLoading(true);
+        console.log('Récupération des données pour email:', email);
+        const result = await getStatLive(email);
+        console.log('Données reçues:', result);
+        setData(result);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données:', error);
+        setError('Impossible de charger les statistiques. Veuillez réessayer.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(true);
-      console.log('Récupération des données pour email:', email);
-      const result = await getStatLive(email);
-      console.log('Données reçues:', result);
-      setData(result);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données:', error);
-      setError('Impossible de charger les statistiques. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
     if (email) {
       fetchSummary();
     }
-  }, [email]);
-
+  }, [email]); // ✅ Plus de warning ici
   if (loading) {
     return (
       <div className="flex justify-center items-center w-full">

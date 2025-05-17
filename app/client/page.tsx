@@ -25,7 +25,21 @@ const AllClientsPage = () => {
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchClients = async () => {
+const fetchClients = async () => {
+  try {
+    if (email) {
+      const allClients = await readAllClients(email);
+      if (allClients) {
+        setClients(allClients);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+useEffect(() => {
+  const loadClients = async () => {
     try {
       if (email) {
         const allClients = await readAllClients(email)
@@ -38,9 +52,10 @@ const AllClientsPage = () => {
     }
   }
 
-  useEffect(() => {
-    fetchClients()
-  }, [email])
+  loadClients()
+}, [email])
+
+
 
   const openEditModal = (client: Client) => {
     setName(client.name)

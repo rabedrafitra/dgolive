@@ -19,7 +19,7 @@ import html2canvas from 'html2canvas'
 
 
 
-const page = ({ params }: { params: Promise<{ liveId: string }> }) => {
+const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
 
 //Initialisation des variables
     const { user } = useUser()
@@ -672,4 +672,4 @@ const generateAllInvoicesPDF = async () => {
     )
 }
 
-export default page
+export default Page

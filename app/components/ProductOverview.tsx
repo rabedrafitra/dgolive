@@ -6,30 +6,20 @@ import { CirclePlay, User, DollarSign, ShoppingCart, Tag } from 'lucide-react'
 const ProductOverview = ({ email }: { email: string }) => {
     const [stats, setStats] = useState<StatLive | null>(null)
 
+useEffect(() => {
     const fetchStats = async () => {
-        try {
-            if (email) {
-                const result = await getStatLive(email)
-                if (result) {
-                    setStats(result)
-                }
-            }
-        } catch (error) {
-            console.error(error)
+      try {
+        if (email) {
+          const result = await getStatLive(email);
+          if (result) setStats(result);
         }
-    }
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
-    function formatNumber(value: number): string {
-        if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
-        if (value >= 1_000) return (value / 1_000).toFixed(1) + "k";
-        return value.toFixed(1);
-    }
-
-
-    useEffect(() => {
-        if (email)
-            fetchStats()
-    }, [email])
+    fetchStats();
+  }, [email]); // ✅ Aucun warning ici
 
     return (
         <div>

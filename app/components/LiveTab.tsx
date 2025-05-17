@@ -19,29 +19,29 @@ const LiveTab = ({ email }: LiveTabProps) => {
   const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 5;
 
-  const loadLives = async () => {
-    try {
-      if (!email) {
-        throw new Error('Email requis');
-      }
-      setLoading(true);
-      const data = await readLives(email);
-      console.log('Sessions reçues:', data);
-      setLives(data || []);
-      setCurrentPage(1);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des sessions live:', error);
-      setError('Impossible de charger les sessions live.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadLives = async () => {
+      try {
+        if (!email) {
+          throw new Error('Email requis');
+        }
+        setLoading(true);
+        const data = await readLives(email);
+        console.log('Sessions reçues:', data);
+        setLives(data || []);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des sessions live:', error);
+        setError('Impossible de charger les sessions live.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (email) {
       loadLives();
     }
-  }, [email]);
+  }, [email]); // ✅ Aucun avertissement ici
 
   // Calculer les sessions à afficher pour la page courante
   const totalPages = Math.ceil(lives.length / itemsPerPage);

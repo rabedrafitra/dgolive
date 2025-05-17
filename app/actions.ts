@@ -2,7 +2,7 @@
 
 import prisma from "./lib/prisma"
 // import { FormDataType, Product, ProductOverviewStats, StockSummary, Transaction } from "@/type"
-import { Category, Live, Client, OrderItem } from "@prisma/client"
+import {  Live, Client } from "@prisma/client"
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 
