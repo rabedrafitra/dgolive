@@ -1,21 +1,7 @@
 // import { Product as PrismaProduct } from "@prisma/client"
 import { Transaction as PrismaTransaction } from "@prisma/client"
 
-// export interface Product extends PrismaProduct {
-//     categoryName: string;
-// }
 
-// export interface FormDataType {
-//     id?: string;
-//     name: string;
-//     description: string;
-//     price: number;
-//     quantity?: number;
-//     categoryId?: string;
-//     unit?: string;
-//     categoryName?: string;
-//     imageUrl?: string;
-// }
 
 export interface StatLive {
   clientCount: number; // Remplace totalProducts et stock normal
