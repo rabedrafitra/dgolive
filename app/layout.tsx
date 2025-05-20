@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DGoLice",
+  title: "DGoLive",
   description: "App Live Management",
 };
 
