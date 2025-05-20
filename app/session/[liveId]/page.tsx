@@ -102,22 +102,33 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   };
 
   const handleAddClient = async (client: Client) => {
-    setLoading(true);
-    try {
-      const { liveId } = await params;
-      await addClientToLive(liveId, client.id);
-      await fetchClients();
-      setLeftSearchQuery('');
-      setLeftSearchResults([]);
-      toast.success(`Client ${client.name} ajouté à la session.`);
-    } catch (error: unknown) {
-      console.error('Erreur lors de l’ajout du client:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l’ajout du client.';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+         setLoading(true); // Start loading
+         try {
+           const { liveId } = await params;
+           console.log('Ajout du client à la session:', { clientId: client.id, liveId });
+ 
+           // Ajouter le client à la session live
+           await addClientToLive(liveId, client.id);
+           console.log('Client ajouté avec succès');
+ 
+           // Rafraîchir la liste des clients
+           await fetchClients();
+           console.log('Liste des clients mise à jour');
+ 
+           // Réinitialiser la recherche
+        // Réinitialiser la recherche
+     setLeftSearchQuery('');
+     setLeftSearchResults([]);
+     toast.success(`Client ${client.name} ajouté à la session.`);
+   } catch (error: unknown) { // Remplacement de any par unknown
+     console.error('Erreur lors de l’ajout du client:', error);
+     // Vérification de type pour accéder à error.message
+     const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l’ajout du client.';
+     toast.error(errorMessage);
+   } finally {
+     setLoading(false); // Stop loading
+   }
+ };
 
   useEffect(() => {
     const fetchLive = async () => {
