@@ -129,7 +129,6 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
      setLoading(false); // Stop loading
    }
  };
- 
 
   useEffect(() => {
     const fetchLive = async () => {
