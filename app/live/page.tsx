@@ -8,7 +8,7 @@ import EmptyState from '../components/EmptyState';
 import { Pencil, Trash, CirclePlay } from 'lucide-react';
 import Link from 'next/link';
 import LiveModal from '../components/LiveModal';
-import { createLive, readLives, updateLive, deleteLive } from '../actions';
+import { createLive, readLives, updateLive, deleteLive, getOrdersByLiveId } from '../actions';
 import { toast } from 'react-toastify';
 
 const Page = () => {
@@ -22,70 +22,65 @@ const Page = () => {
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
   const [lives, setLives] = useState<Live[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0); // Total des prix
+  const [totalOrderedItems, setTotalOrderedItems] = useState(0); // Nombre total d'articles
   const itemsPerPage = 10;
 
   const loadLives = async () => {
     if (email) {
-      const data = await readLives(email);
-      if (data) {
-        setLives(data);
-        setCurrentPage(1); // Réinitialiser à la première page après chargement
-      }
-    }
-  };
-
-
-useEffect(() => {
-  const loadLives = async () => {
-    try {
-      if (!email) {
-        throw new Error('Email requis');
-      }
-
-      setLoading(true); // Si tu as un état loading
-      const data = await readLives(email);
-      if (data) {
-        setLives(data);
-        setCurrentPage(1); // Réinitialiser à la première page
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des sessions :', error);
-    
-    } finally {
-      setLoading(false); // Ne pas oublier de désactiver loading
-    }
-  };
-
-  if (email) {
-    loadLives();
-  }
-}, [email]);
-
-
-    useEffect(() => {
-    const loadLives = async () => {
       try {
-        if (!email) throw new Error("Email requis");
-
         setLoading(true);
         const data = await readLives(email);
-        console.log("Sessions reçues:", data);
-
-        setLives(data || []);
-        setCurrentPage(1); // Réinitialiser la pagination
-        
-      } catch (err) {
-        console.error("Erreur lors de la récupération des sessions live:", err);
-        
+        if (data) {
+          setLives(data);
+          setCurrentPage(1); // Réinitialiser à la première page
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des sessions :', error);
       } finally {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     if (email) {
       loadLives();
     }
   }, [email]);
+
+  // Calculer le total global des commandes et le nombre d'articles
+  const calculateTotals = async () => {
+    if (!email || lives.length === 0) {
+      setTotalOrders(0);
+      setTotalOrderedItems(0);
+      return;
+    }
+
+    try {
+      let totalPrice = 0;
+      let totalItems = 0;
+      for (const live of lives) {
+        const orders = await getOrdersByLiveId(live.id);
+        if (orders) {
+          Object.values(orders).forEach((clientOrders) => {
+            totalPrice += clientOrders.reduce((sum, order) => sum + order.price, 0);
+            totalItems += clientOrders.length; // Compter chaque article
+          });
+        }
+      }
+      setTotalOrders(totalPrice);
+      setTotalOrderedItems(totalItems);
+    } catch (error) {
+      console.error('Erreur lors du calcul des totaux :', error);
+      setTotalOrders(0);
+      setTotalOrderedItems(0);
+    }
+  };
+
+  useEffect(() => {
+    calculateTotals();
+  }, [lives, email]);
 
   const openCreateModal = () => {
     setName('');
@@ -249,6 +244,16 @@ useEffect(() => {
                 </button>
               </div>
             )}
+
+            {/* Affichage du total général et du nombre d'articles commandés */}
+            <div className="mt-4 text-right">
+              <span className="text-lg font-bold text-green-600 mr-4">
+                Total général des articles : {totalOrders.toLocaleString('fr-FR')} Ar
+              </span>
+              <span className="text-lg font-bold text-blue-600">
+                {totalOrderedItems} articles commandés
+              </span>
+            </div>
           </>
         )}
       </div>
