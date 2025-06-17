@@ -8,7 +8,7 @@ import EmptyState from '../components/EmptyState';
 import { Pencil, Trash, CirclePlay } from 'lucide-react';
 import Link from 'next/link';
 import LiveModal from '../components/LiveModal';
-import { createLive, readLives, updateLive, deleteLive, getOrdersByLiveId } from '../actions';
+import { createLive, readLives, updateLive, deleteLive} from '../actions';
 import { toast } from 'react-toastify';
 
 const Page = () => {
@@ -22,7 +22,6 @@ const Page = () => {
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
   const [lives, setLives] = useState<Live[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrderedItems, setTotalOrderedItems] = useState(0); // Nombre total d'articles
   const itemsPerPage = 10;
 
   const loadLives = async () => {
