@@ -1,6 +1,6 @@
 'use client';
 
-import { readClientsByLiveId, searchClients, addClientToLive, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem } from '@/app/actions';
+import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem } from '@/app/actions';
 import Wrapper from '@/app/components/Wrapper';
 import { useUser } from '@clerk/nextjs';
 import { Client, Live } from '@prisma/client';
@@ -102,33 +102,28 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   };
 
   const handleAddClient = async (client: Client) => {
-         setLoading(true); // Start loading
-         try {
-           const { liveId } = await params;
-           console.log('Ajout du client à la session:', { clientId: client.id, liveId });
- 
-           // Ajouter le client à la session live
-           await addClientToLive(liveId, client.id);
-           console.log('Client ajouté avec succès');
- 
-           // Rafraîchir la liste des clients
-           await fetchClients();
-           console.log('Liste des clients mise à jour');
- 
-           // Réinitialiser la recherche
-        // Réinitialiser la recherche
-     setLeftSearchQuery('');
-     setLeftSearchResults([]);
-     toast.success(`Client ${client.name} ajouté à la session.`);
-   } catch (error: unknown) { // Remplacement de any par unknown
-     console.error('Erreur lors de l’ajout du client:', error);
-     // Vérification de type pour accéder à error.message
-     const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l’ajout du client.';
-     toast.error(errorMessage);
-   } finally {
-     setLoading(false); // Stop loading
-   }
- };
+    setLoading(true);
+    try {
+      const { liveId } = await params;
+      console.log('Ajout du client à la session:', { clientId: client.id, liveId });
+
+      await addClientToLive(liveId, client.id);
+      console.log('Client ajouté avec succès');
+
+      await fetchClients();
+      console.log('Liste des clients mise à jour');
+
+      setLeftSearchQuery('');
+      setLeftSearchResults([]);
+      toast.success(`Client ${client.name} ajouté à la session.`);
+    } catch (error: unknown) {
+      console.error('Erreur lors de l’ajout du client:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l’ajout du client.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchLive = async () => {
@@ -464,26 +459,26 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                 <td colSpan={5} className="text-right pr-4">
                   <span className="text-lg font-bold text-green-600">Total général :</span>
                 </td>
-                <td>
-                  <span className="text-lg font-bold text-green-600">
+                <td colSpan={2} className="text-lg font-bold text-green-600">
+                  <span>
                     {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0)} Ar
                   </span>
+                  <span className="ml-4 text-blue-600">
+                    ({Object.values(orders).flat().length} articles)
+                  </span>
                 </td>
-                <td></td>
               </tr>
             </tbody>
           </table>
         )}
       </div>
-               <div className='mb-4'>
-                        <button className='btn btn-primary'
-                           onClick={openCreateModal}
-                          >
-                        
-                            <UserRoundPlus className='w-12 h-12' />
-                                </button>
-                                
-                      </div>
+      <div className='mb-4'>
+        <button className='btn btn-primary'
+          onClick={openCreateModal}
+        >
+          <UserRoundPlus className='w-12 h-12' />
+        </button>
+      </div>
 
       <ClientModal
         name={name}
@@ -508,120 +503,141 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
         />
       )}
 
-      {invoiceClient && (
-        <dialog id="invoice_modal" className="modal">
-          <div className="modal-box max-w-2xl" id="invoice-content">
-            <div className="flex items-center gap-4 mb-6">
-              <Image
-                src="/innovas.png"
-                alt="Logo Association"
-                width={48}
-                height={48}
-                className="object-contain"
-              />
-              <div>
-                <h2 className="text-xl font-bold">Innovas Management</h2>
-                <p className="text-sm text-gray-600">Facture client</p>
-              </div>
-            </div>
-            <h3 className="font-bold text-lg">Facture : {invoiceClient.name}</h3>
-            <div className="text-sm mt-2 mb-4 space-y-1">
-              <p>
-                <strong>Adresse :</strong> {invoiceClient.address || 'N/A'}
-              </p>
-              <p>
-                <strong>Téléphone :</strong> {invoiceClient.tel || 'N/A'}
-              </p>
-              <p>
-                <strong>Date :</strong>{' '}
-                {live?.date ? format(new Date(live.date), 'dd/MM/yyyy') : 'N/A'}
-              </p>
-            </div>
-            <p className="py-2 font-semibold">Articles achetés :</p>
-            <table className="w-full text-sm border border-gray-300 border-collapse rounded overflow-hidden mb-4 shadow-sm">
-              <thead className="bg-gray-800 text-white print:bg-white print:text-black">
-                <tr>
-                  <th className="border border-gray-200 px-3 py-2 text-left">#</th>
-                  <th className="border border-gray-200 px-3 py-2 text-left">Référence</th>
-                  <th className="border border-gray-200 px-3 py-2 text-right">Prix (Ar)</th>
-                  <th className="border border-gray-200 px-3 py-2 text-center print:hidden">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(orders[invoiceClient.id] || []).map((order, i) => (
-                  <tr key={order.id}>
-                    <td className="border border-gray-300 px-3 py-2">{i + 1}</td>
-                    <td className="border border-gray-300 px-3 py-2">
-                      <input
-                        type="text"
-                        className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 print:hidden"
-                        value={order.ref}
-                        onChange={(e) => {
-                          const newOrders = [...orders[invoiceClient.id]];
-                          newOrders[i] = { ...newOrders[i], ref: e.target.value };
-                          setOrders({ ...orders, [invoiceClient.id]: newOrders });
-                        }}
-                      />
-                      <span className="hidden print:inline">{order.ref}</span>
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-right">
-                      <input
-                        type="number"
-                        className="w-24 text-right bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 print:hidden"
-                        value={order.price}
-                        onChange={(e) => {
-                          const newOrders = [...orders[invoiceClient.id]];
-                          newOrders[i] = { ...newOrders[i], price: parseInt(e.target.value) || 0 };
-                          setOrders({ ...orders, [invoiceClient.id]: newOrders });
-                        }}
-                      />
-                      <span className="hidden print:inline">{order.price.toLocaleString('fr-FR')} Ar</span>
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center print:hidden">
-                      <button
-                        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                        onClick={async () => {
-                          try {
-                            await updateOrderItem(order.id, order.ref, order.price);
-                            toast.success('Article mis à jour !');
-                          } catch (error) {
-                            console.error(error);
-                          }
-                        }}
-                      >
-                        Modifier
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-semibold">
-                  <td colSpan={3} className="border border-gray-300 px-3 py-2 text-right">Total :</td>
-                  <td className="border border-gray-300 px-3 py-2 text-right">
-                    {(orders[invoiceClient.id] || [])
-                      .reduce((acc, cur) => acc + cur.price, 0)
-                      .toLocaleString('fr-FR')} Ar
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-            <div className="flex justify-end items-center gap-4 mt-6 print:hidden">
-              <form method="dialog">
-                <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition">
-                  Fermer
-                </button>
-              </form>
-              <button className="btn btn-outline" onClick={() => window.print()}>
-                🖨️ Imprimer / PDF
-              </button>
-              <button className="btn btn-outline hidden" onClick={() => handlePrint()}>
-                cacher
-              </button>
-            </div>
-          </div>
-        </dialog>
-      )}
+    {invoiceClient && (
+  <dialog id="invoice_modal" className="modal">
+    <div className="modal-box max-w-2xl" id="invoice-content">
+      <div className="flex items-center gap-4 mb-6">
+        <Image
+          src="/innovas.png"
+          alt="Logo Association"
+          width={48}
+          height={48}
+          className="object-contain"
+        />
+        <div>
+          <h2 className="text-xl font-bold">Innovas Management</h2>
+          <p className="text-sm text-gray-600">Facture client</p>
+        </div>
+      </div>
+      <h3 className="font-bold text-lg">Facture : {invoiceClient.name}</h3>
+      <div className="text-sm mt-2 mb-4 space-y-1">
+        <p>
+          <strong>Adresse :</strong> {invoiceClient.address || 'N/A'}
+        </p>
+        <p>
+          <strong>Téléphone :</strong> {invoiceClient.tel || 'N/A'}
+        </p>
+        <p>
+          <strong>Date :</strong>{' '}
+          {live?.date ? format(new Date(live.date), 'dd/MM/yyyy') : 'N/A'}
+        </p>
+      </div>
+      <p className="py-2 font-semibold">Articles achetés :</p>
+      <table className="w-full text-sm border border-gray-300 border-collapse rounded overflow-hidden mb-4 shadow-sm">
+        <thead className="bg-gray-800 text-white print:bg-white print:text-black">
+          <tr>
+            <th className="border border-gray-200 px-3 py-2 text-left">#</th>
+            <th className="border border-gray-200 px-3 py-2 text-left">Référence</th>
+            <th className="border border-gray-200 px-3 py-2 text-right">Prix (Ar)</th>
+            <th className="border border-gray-200 px-3 py-2 text-center print:hidden">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(orders[invoiceClient.id] || []).map((order, i) => (
+            <tr key={order.id}>
+              <td className="border border-gray-300 px-3 py-2">{i + 1}</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input
+                  type="text"
+                  className="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 print:hidden"
+                  value={order.ref}
+                  onChange={(e) => {
+                    const newOrders = [...orders[invoiceClient.id]];
+                    newOrders[i] = { ...newOrders[i], ref: e.target.value };
+                    setOrders({ ...orders, [invoiceClient.id]: newOrders });
+                  }}
+                />
+                <span className="hidden print:inline">{order.ref}</span>
+              </td>
+              <td className="border border-gray-300 px-3 py-2 text-right">
+                <input
+                  type="number"
+                  className="w-24 text-right bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 print:hidden"
+                  value={order.price}
+                  onChange={(e) => {
+                    const newOrders = [...orders[invoiceClient.id]];
+                    newOrders[i] = { ...newOrders[i], price: parseInt(e.target.value) || 0 };
+                    setOrders({ ...orders, [invoiceClient.id]: newOrders });
+                  }}
+                />
+                <span className="hidden print:inline">{order.price.toLocaleString('fr-FR')} Ar</span>
+              </td>
+              <td className="border border-gray-300 px-3 py-2 text-center print:hidden">
+                <div className="flex gap-2 justify-center">
+                  <button
+                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    onClick={async () => {
+                      try {
+                        await updateOrderItem(order.id, order.ref, order.price);
+                        toast.success('Article mis à jour !');
+                      } catch (error) {
+                        console.error(error);
+                      }
+                    }}
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    className="text-red-600 hover:text-red-800 font-medium text-sm"
+                    onClick={async () => {
+                      try {
+                        await deleteOrderItem(order.id); // Supposée fonction dans actions
+                        const newOrders = orders[invoiceClient.id].filter((o) => o.id !== order.id);
+                        setOrders((prev) => ({
+                          ...prev,
+                          [invoiceClient.id]: newOrders,
+                        }));
+                        toast.success('Article supprimé !');
+                      } catch (error) {
+                        console.error('Erreur lors de la suppression:', error);
+                        toast.error('Erreur lors de la suppression de l\'article.');
+                      }
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-semibold">
+            <td colSpan={3} className="border border-gray-300 px-3 py-2 text-right">Total :</td>
+            <td className="border border-gray-300 px-3 py-2 text-right">
+              {(orders[invoiceClient.id] || [])
+                .reduce((acc, cur) => acc + cur.price, 0)
+                .toLocaleString('fr-FR')} Ar
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <div className="flex justify-end items-center gap-4 mt-6 print:hidden">
+        <form method="dialog">
+          <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition">
+            Fermer
+          </button>
+        </form>
+        <button className="btn btn-outline" onClick={() => window.print()}>
+          🖨️ Imprimer / PDF
+        </button>
+        <button className="btn btn-outline hidden" onClick={() => handlePrint()}>
+          cacher
+        </button>
+      </div>
+    </div>
+  </dialog>
+)}
     </Wrapper>
   );
 };
