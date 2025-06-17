@@ -22,7 +22,6 @@ const Page = () => {
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
   const [lives, setLives] = useState<Live[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0); // Total des prix
   const [totalOrderedItems, setTotalOrderedItems] = useState(0); // Nombre total d'articles
   const itemsPerPage = 10;
 
@@ -50,37 +49,6 @@ const Page = () => {
   }, [email]);
 
   // Calculer le total global des commandes et le nombre d'articles
-  const calculateTotals = async () => {
-    if (!email || lives.length === 0) {
-      setTotalOrders(0);
-      setTotalOrderedItems(0);
-      return;
-    }
-
-    try {
-      let totalPrice = 0;
-      let totalItems = 0;
-      for (const live of lives) {
-        const orders = await getOrdersByLiveId(live.id);
-        if (orders) {
-          Object.values(orders).forEach((clientOrders) => {
-            totalPrice += clientOrders.reduce((sum, order) => sum + order.price, 0);
-            totalItems += clientOrders.length; // Compter chaque article
-          });
-        }
-      }
-      setTotalOrders(totalPrice);
-      setTotalOrderedItems(totalItems);
-    } catch (error) {
-      console.error('Erreur lors du calcul des totaux :', error);
-      setTotalOrders(0);
-      setTotalOrderedItems(0);
-    }
-  };
-
-  useEffect(() => {
-    calculateTotals();
-  }, [lives, email]);
 
   const openCreateModal = () => {
     setName('');
