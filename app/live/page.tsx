@@ -212,12 +212,7 @@ const Page = () => {
               </div>
             )}
 
-            {/* Affichage du total général et du nombre d'articles commandés */}
-            <div className="mt-4 text-right">
-              <span className="text-lg font-bold text-blue-600">
-                {totalOrderedItems} articles commandés
-              </span>
-            </div>
+          
           </>
         )}
       </div>
