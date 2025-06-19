@@ -421,7 +421,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                   <td className="font-semibold">
                     {(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0)} Ar
                   </td>
-                  <td className="flex gap-2 flex-col">
+                 <td className="align-middle">
                     <div className="flex gap-2">
                       <button
                         className="btn btn-sm btn-success"
