@@ -7,44 +7,44 @@
   color-scheme: "light";
   
   --color-base-100: #09002f; /* Fallback */
-
-  --color-base-200: #252A3B; /* Fallback */
  
+  --color-base-200: #120b3d; /* Fallback */
+
   --color-base-300: #303547; /* Fallback */
-  
+
   --color-base-content: #C7C7D1; /* Fallback */
- 
+
   --color-primary: #e9003e; /* Fallback modifié */
+
+  --color-primary-content: #500323; /* Fallback */
+
+  --color-secondary: #71d1fe; /* Fallback */
+
+  --color-secondary-content: #042e49; /* Fallback */
   
-  --color-primary-content: #2D1A1C; /* Fallback */
-
-  --color-secondary: #A3BFFA; /* Fallback */
-
-  --color-secondary-content: #2A2E5B; /* Fallback */
-
   --color-accent: #F6AD55; /* Fallback */
- 
+
   --color-accent-content: #2F1E0F; /* Fallback */
-  
-  --color-neutral: #E53E3E; /* Fallback */
-  
-  --color-neutral-content: #F7FAFC; /* Fallback */
-
-  --color-info: #63B3ED; /* Fallback */
-
-  --color-info-content: #2A2E5B; /* Fallback */
  
-  --color-success: #68D391; /* Fallback */
+  --color-neutral: #e50076; /* Fallback */
+  
+  --color-neutral-content: #c6d2ff; /* Fallback */
 
-  --color-success-content: #1A3C34; /* Fallback */
+  --color-info: #00bafe; /* Fallback */
 
+  --color-info-content: #042e49; /* Fallback */
+
+  --color-success: #00d3bb; /* Fallback */
+ 
+  --color-success-content: #002d2c; /* Fallback */
+ 
   --color-warning: #F6E05E; /* Fallback */
 
   --color-warning-content: #4C2C0E; /* Fallback */
-
-  --color-error: #FC8181; /* Fallback */
-
-  --color-error-content: #3B0F1A; /* Fallback */
+  
+  --color-error: #ec8c78; /* Fallback */
+ 
+  --color-error-content: #201047; /* Fallback */
  
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
