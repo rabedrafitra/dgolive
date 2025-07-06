@@ -462,11 +462,11 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
             <tbody>
               {clients.map((client, index) => (
                 <tr key={client.id}>
-                  <th className="text-center">{index + 1}</th>
-                  <td className="text-center">{client.name}</td>
-                  <td className="text-center">{client.address}</td>
-                  <td className="text-center">{client.tel}</td>
-                  <td className="w-64 text-center">
+                  <th >{index + 1}</th>
+                  <td >{client.name}</td>
+                  <td>{client.address}</td>
+                  <td >{client.tel}</td>
+                  <td className="w-64">
                     {(orders[client.id] || []).map((order, idx) => (
                       <div key={idx} className="text-sm">
                         Réf {order.ref} - {order.price} Ar
