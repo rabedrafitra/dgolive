@@ -104,7 +104,6 @@ model Transaction {
        reference      String
        quantity       Int
        unitPrice      Float
-       isDeliveredAndPaid Boolean @default(false) // Nouveau champ
        liveClient     LiveClient    @relation(fields: [liveClientId], references: [id], onDelete: Cascade)
        createdAt      DateTime      @default(now())
      }
