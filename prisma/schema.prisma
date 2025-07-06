@@ -106,5 +106,4 @@ model Transaction {
        unitPrice      Float
        liveClient     LiveClient    @relation(fields: [liveClientId], references: [id], onDelete: Cascade)
        createdAt      DateTime      @default(now())
-       isDeliveredAndPaid Boolean   @default(false)
      }
