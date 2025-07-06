@@ -1246,3 +1246,38 @@ export async function getStatLive(email: string): Promise<StatLive> {
     };
   }
 }
+
+export async function getAllOrdersByClientId(clientId: string, email: string) {
+    if (!email || !clientId) {
+        throw new Error("L'email de l'association et l'ID du client sont requis.");
+    }
+    try {
+        const association = await getAssociation(email);
+        if (!association) {
+            throw new Error("Aucune association trouvée avec cet email.");
+        }
+        const liveClients = await prisma.liveClient.findMany({
+            where: {
+                clientId,
+                live: { associationId: association.id }
+            },
+            include: {
+                orderItems: true,
+                live: { select: { date: true } }
+            }
+        });
+        const orders = liveClients.flatMap(liveClient =>
+            liveClient.orderItems.map(order => ({
+                id: order.id,
+                reference: order.reference,
+                unitPrice: order.unitPrice,
+                quantity: order.quantity,
+                liveDate: liveClient.live?.date || null
+            }))
+        );
+        return orders;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des commandes du client :", error);
+        throw new Error("Impossible de charger les commandes du client.");
+    }
+}
