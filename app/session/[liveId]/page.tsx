@@ -552,13 +552,13 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                   <td className="w-64">
   {(orders[client.id] || []).map((order, idx) => (
     <div key={idx} className="text-sm flex items-center gap-2">
-      <input
+     <input
         type="checkbox"
         checked={order.isDeliveredAndPaid}
-        onChange={(e) => handleCheckboxChange(client.id, order.id, e.target.checked)}
+        onChange={() => handleCheckboxChange(client.id, order.id, !order.isDeliveredAndPaid)}
         className="checkbox checkbox-xs"
         title="Livré et payé"
-    />
+      />
     </div>
   ))}
 
