@@ -566,9 +566,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       />
     </div>
   ))}
-  {(orders[client.id] || []).length === 0 && (
-    <div className="text-sm text-gray-500">Aucun article</div>
-  )}
+
 </td>
                 </tr>
               ))}
