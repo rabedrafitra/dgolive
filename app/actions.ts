@@ -1295,22 +1295,48 @@ export async function updateOrderItemStatus(orderId: string, isDeliveredAndPaid:
   }
 }
 
-export async function handleCheckboxChange  (clientId: string, orderId: string, checked: boolean) {
+// actions.ts
+export async function handleCheckboxChange(
+  clientId: string,
+  orderId: string,
+  checked: boolean,
+  orders: Record<string, { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }[]>
+) {
+  // Validation des paramètres
+  if (!clientId || !orderId) {
+    console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
+    return orders; // Retourne l'état inchangé en cas d'erreur
+  }
+
+  // Vérifier si la commande existe
+  const clientOrders = orders[clientId] || [];
+  const orderExists = clientOrders.some(
+    (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) => order.id === orderId
+  );
+  if (!orderExists) {
+    console.error('Erreur: commande non trouvée', { clientId, orderId });
+    return orders; // Retourne l'état inchangé
+  }
+
   try {
     // Mettre à jour la base de données
     await updateOrderItemStatus(orderId, checked);
 
-    // Mettre à jour l'état local
-    setOrders((prev) => {
-      const clientOrders = prev[clientId] || [];
-      const updatedOrders = clientOrders.map((order) =>
+    // Mettre à jour les données localement
+    const updatedOrders = clientOrders.map(
+      (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
         order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
-      );
-      return { ...prev, [clientId]: updatedOrders };
-    });
-    console.error('Statut de la commande mis à jour !');
+    );
+
+    console.log('Statut de la commande mis à jour !');
+    return { ...orders, [clientId]: updatedOrders };
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du statut:', error);
-    console.error('Erreur lors de la mise à jour du statut de la commande.');
+    console.error('Erreur lors de la mise à jour du statut de la commande:', {
+      error,
+      clientId,
+      orderId,
+      checked,
+    });
+    return orders; // Retourne l'état inchangé en cas d'erreur
   }
-};
+}
