@@ -553,7 +553,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                     </div>
                   </td>
 
-                  <td className="w-64">
+                  <td>
   {(orders[client.id] || []).map((order, idx) => (
     <div key={idx} className="text-sm flex items-center gap-2">
      <input

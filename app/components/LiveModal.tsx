@@ -3,12 +3,12 @@ import React from 'react';
 interface Props {
   name: string;
   description: string;
-  purchasePrice: number | ''; // Nouveau champ pour le prix d'achat
+//   purchasePrice: number | ''; // Nouveau champ pour le prix d'achat
   loading: boolean;
   onclose: () => void;
   onChangeName: (value: string) => void;
   onChangeDescription: (value: string) => void;
-  onChangePurchasePrice: (value: number | '') => void; // Nouveau gestionnaire
+//   onChangePurchasePrice: (value: number | '') => void; // Nouveau gestionnaire
   onSubmit: () => void;
   editMode?: boolean;
 }
@@ -16,12 +16,12 @@ interface Props {
 const LiveModal: React.FC<Props> = ({
   name,
   description,
-  purchasePrice,
+//   purchasePrice,
   loading,
   onclose,
   onChangeName,
   onChangeDescription,
-  onChangePurchasePrice,
+//   onChangePurchasePrice,
   onSubmit,
   editMode,
 }) => {
@@ -55,7 +55,7 @@ const LiveModal: React.FC<Props> = ({
           className="input input-bordered w-full mb-4"
           disabled={loading}
         />
-        <input
+        {/* <input
           type="number"
           placeholder="Prix d'achat (Ar)"
           value={purchasePrice}
@@ -63,7 +63,7 @@ const LiveModal: React.FC<Props> = ({
           className="input input-bordered w-full mb-4"
           disabled={loading}
           min="0"
-        />
+        /> */}
         <button
           className="btn btn-primary"
           onClick={onSubmit}

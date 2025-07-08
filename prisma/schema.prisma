@@ -72,7 +72,7 @@ model Transaction {
        liveClients    LiveClient[]
        createdAt      DateTime      @default(now())
        updatedAt      DateTime      @updatedAt
-       purchasePrice  Float?   // Nouveau champ pour le prix d'achat
+       purchasePrice  Float?        // Nouveau champ pour le prix d'achat
      }
 
      model Client {
