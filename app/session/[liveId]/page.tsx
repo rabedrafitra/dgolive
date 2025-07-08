@@ -201,7 +201,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       // Mettre à jour la base de données
       await updateOrderItemStatus(orderId, checked);
 
-      // Mettre à jour l'état local
+      // Mettre à jour l'état locals
       setOrders((prev) => {
         const clientOrders = prev[clientId] || [];
         const updatedOrders = clientOrders.map((order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
