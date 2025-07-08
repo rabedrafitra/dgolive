@@ -1,6 +1,6 @@
 'use client';
 
-import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem } from '@/app/actions';
+import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, handleCheckboxChange } from '@/app/actions';
 import Wrapper from '@/app/components/Wrapper';
 import { useUser } from '@clerk/nextjs';
 import { Client, Live } from '@prisma/client';
@@ -31,7 +31,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [rightSearchQuery, setRightSearchQuery] = useState('');
   const [rightSearchResults, setRightSearchResults] = useState<Client[]>([]);
   const [orders, setOrders] = useState<{
-    [clientId: string]: { id: string; ref: string; price: number }[];
+    [clientId: string]: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }[];
   }>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
@@ -181,6 +181,45 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     (document.getElementById('client_modal') as HTMLDialogElement)?.close();
   };
 
+
+  const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
+    // Validation des paramètres
+    if (!clientId || !orderId) {
+      console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
+      return;
+    }
+
+    // Vérifier si la commande existe
+    const clientOrders = orders[clientId] || [];
+    const orderExists = clientOrders.some((order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) => order.id === orderId);
+    if (!orderExists) {
+      console.error('Erreur: commande non trouvée', { clientId, orderId });
+      return;
+    }
+
+    try {
+      // Mettre à jour la base de données
+      await updateOrderItemStatus(orderId, checked);
+
+      // Mettre à jour l'état local
+      setOrders((prev) => {
+        const clientOrders = prev[clientId] || [];
+        const updatedOrders = clientOrders.map((order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
+          order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
+        );
+        return { ...prev, [clientId]: updatedOrders };
+      });
+      console.log('Statut de la commande mis à jour !');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut de la commande:', {
+        error,
+        clientId,
+        orderId,
+        checked,
+      });
+    }
+  };
+  
   const handleCreateClient = async () => {
     setLoading(true);
     try {
@@ -254,6 +293,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
         reference: ref,
         quantity: 1,
         unitPrice: price,
+        isDeliveredAndPaid: false, // Ajout
       });
       setOrders((prev) => {
         const currentOrders = prev[clientId] || [];
@@ -265,6 +305,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
               id: newOrder.id,
               ref: newOrder.reference,
               price: newOrder.unitPrice * newOrder.quantity,
+              isDeliveredAndPaid: false, // Ajout
+
             },
           ],
         };
@@ -511,30 +553,69 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                       </button>
                     </div>
                   </td>
+
+                  <td className="w-64">
+  {(orders[client.id] || []).map((order, idx) => (
+    <div key={idx} className="text-sm flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={order.isDeliveredAndPaid}
+        onChange={(e) => handleCheckboxChange(client.id, order.id, e.target.checked)}
+        className="checkbox checkbox-xs"
+        title="Livré et payé"
+      />
+    </div>
+  ))}
+  {(orders[client.id] || []).length === 0 && (
+    <div className="text-sm text-gray-500">Aucun article</div>
+  )}
+</td>
                 </tr>
               ))}
-              <tr className="border-t">
-                <td colSpan={5} className="text-right pr-4">
-                  <span className="text-lg font-bold text-green-600">Total général :</span>
-                </td>
-                <td colSpan={3} className="text-lg font-bold text-green-600 text-center">
-                  <span>
-                    {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0)} Ar
-                  </span>
-                  <span className="ml-4 text-blue-600">
-                    ({Object.values(orders).flat().length} articles)
-                  </span>
-                  <div className="mt-2 flex gap-2 justify-center">
-                    <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
-                      🖨️ Imprimer Liste
-                    </button>
-                    <button className="btn btn-outline btn-sm" onClick={handleExportExcel}>
-                      📊 Exporter Excel
-                    </button>
-                  </div>
-                </td>
-              </tr>
+             
             </tbody>
+            <tfoot>
+  <tr className="border-t">
+    <td colSpan={5} className="text-right pr-4">
+      <span className="text-lg font-bold text-green-600">Total général :</span>
+    </td>
+    <td colSpan={3} className="text-lg font-bold text-green-600 text-center">
+      <span>
+        {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0)} Ar
+      </span>
+      <span className="ml-4 text-blue-600">
+        ({Object.values(orders).flat().length} articles)
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td colSpan={5} className="text-right pr-4">
+      <span className="text-lg font-bold text-blue-600">Total collecté (livré et payé) :</span>
+    </td>
+    <td colSpan={3} className="text-lg font-bold text-blue-600 text-center">
+      <span>
+        {Object.values(orders)
+          .flat()
+          .reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0)} Ar
+      </span>
+      <span className="ml-4 text-blue-600">
+        ({Object.values(orders).flat().filter((item) => item.isDeliveredAndPaid).length} articles)
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td colSpan={8} className="text-center">
+      <div className="mt-2 flex gap-2 justify-center">
+        <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
+          🖨️ Imprimer Liste
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={handleExportExcel}>
+          📊 Exporter Excel
+        </button>
+      </div>
+    </td>
+  </tr>
+</tfoot>
           </table>
         )}
       </div>

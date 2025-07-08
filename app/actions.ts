@@ -938,6 +938,7 @@ export async function createOrderItem({
   reference: string;
   quantity: number;
   unitPrice: number;
+  isDeliveredAndPaid: false, // Ajout
 }) {
   try {
     // Trouver le liveClient (relation)
@@ -1015,13 +1016,14 @@ export async function getOrdersByLiveId(liveId: string) {
     const ordersByClient = liveClients.reduce((acc, liveClient) => {
       if (liveClient.orderItems.length > 0) {
         acc[liveClient.clientId] = liveClient.orderItems.map((order) => ({
-          id : order.id,
+          id: order.id,
           ref: order.reference,
           price: order.quantity * order.unitPrice,
+          isDeliveredAndPaid: order.isDeliveredAndPaid, // Ajout du champ
         }));
       }
       return acc;
-    }, {} as Record<string, { id: string; ref: string; price: number }[]>);
+    }, {} as Record<string, { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }[]>);
 
     return ordersByClient;
   } catch (error) {
@@ -1029,7 +1031,6 @@ export async function getOrdersByLiveId(liveId: string) {
     throw new Error("Impossible de charger les commandes.");
   }
 }
-
 
 export async function readAllClients(email: string) {
   if (!email) {
@@ -1281,3 +1282,35 @@ export async function getAllOrdersByClientId(clientId: string, email: string) {
         throw new Error("Impossible de charger les commandes du client.");
     }
 }
+
+export async function updateOrderItemStatus(orderId: string, isDeliveredAndPaid: boolean) {
+  try {
+    await prisma.orderItem.update({
+      where: { id: orderId },
+      data: { isDeliveredAndPaid },
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut de la commande:', error);
+    throw new Error('Impossible de mettre à jour le statut de la commande.');
+  }
+}
+
+export async function handleCheckboxChange  (clientId: string, orderId: string, checked: boolean) {
+  try {
+    // Mettre à jour la base de données
+    await updateOrderItemStatus(orderId, checked);
+
+    // Mettre à jour l'état local
+    setOrders((prev) => {
+      const clientOrders = prev[clientId] || [];
+      const updatedOrders = clientOrders.map((order) =>
+        order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
+      );
+      return { ...prev, [clientId]: updatedOrders };
+    });
+    console.error('Statut de la commande mis à jour !');
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut:', error);
+    console.error('Erreur lors de la mise à jour du statut de la commande.');
+  }
+};
