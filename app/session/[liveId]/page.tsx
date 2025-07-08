@@ -185,76 +185,76 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
 
 
   const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
-  if (!clientId || !orderId) {
-    console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
-    return;
-  }
-  const clientOrders = orders[clientId] || [];
-  const orderExists = clientOrders.some(
-    (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) => order.id === orderId
-  );
-  if (!orderExists) {
-    console.error('Erreur: commande non trouvée', { clientId, orderId });
-    return;
-  }
-  try {
-    await updateOrderItemStatus(orderId, checked);
-    setOrders((prev) => {
-      const clientOrders = prev[clientId] || [];
-      const updatedOrders = clientOrders.map(
-        (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
-          order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
-      );
-      return { ...prev, [clientId]: updatedOrders };
-    });
-    console.log('Statut de la commande mis à jour !');
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour du statut de la commande:', {
-      error,
-      clientId,
-      orderId,
-      checked,
-    });
-  }
-};
-  const handleCreateClient = async () => {
-    setLoading(true);
-    try {
-      const { liveId } = await params;
-      if (email && liveId) {
-        await createClient(name, adress, tel, email, liveId);
-      }
-      await fetchClients();
-      closeModal();
-      toast.success('Client ajouté avec succès.');
-    } catch (error) {
-      console.error('Erreur création client:', error);
-      toast.error("Erreur lors de l'ajout du client.");
-    } finally {
-      setLoading(false);
-    }
-  };
+            if (!clientId || !orderId) {
+              console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
+              return;
+            }
+            const clientOrders = orders[clientId] || [];
+            const orderExists = clientOrders.some(
+              (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) => order.id === orderId
+            );
+            if (!orderExists) {
+              console.error('Erreur: commande non trouvée', { clientId, orderId });
+              return;
+            }
+            try {
+              await updateOrderItemStatus(orderId, checked);
+              setOrders((prev) => {
+                const clientOrders = prev[clientId] || [];
+                const updatedOrders = clientOrders.map(
+                  (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
+                    order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
+                );
+                return { ...prev, [clientId]: updatedOrders };
+              });
+              console.log('Statut de la commande mis à jour !');
+            } catch (error) {
+              console.error('Erreur lors de la mise à jour du statut de la commande:', {
+                error,
+                clientId,
+                orderId,
+                checked,
+              });
+            }
+                  };
+                    const handleCreateClient = async () => {
+                      setLoading(true);
+                      try {
+                        const { liveId } = await params;
+                        if (email && liveId) {
+                          await createClient(name, adress, tel, email, liveId);
+                        }
+                        await fetchClients();
+                        closeModal();
+                        toast.success('Client ajouté avec succès.');
+                      } catch (error) {
+                        console.error('Erreur création client:', error);
+                        toast.error("Erreur lors de l'ajout du client.");
+                      } finally {
+                        setLoading(false);
+                      }
+          };
 
-  const handleUpdateClient = async () => {
-    if (!editingClientId) return;
-    setLoading(true);
-    if (email) {
-      await updateClient(editingClientId, name, adress, tel, email);
-    }
-    await fetchClients();
-    closeModal();
-    setLoading(false);
-    toast.success('Information client mise à jour avec succès.');
-  };
+          const handleUpdateClient = async () => {
+            if (!editingClientId) return;
+            setLoading(true);
+            if (email) {
+              await updateClient(editingClientId, name, adress, tel, email);
+            }
+            await fetchClients();
+            closeModal();
+            setLoading(false);
+            toast.success('Information client mise à jour avec succès.');
+          };
 
-  const openOrderModal = (clientId: string) => {
-    setSelectedClientId(clientId);
-  };
+          const openOrderModal = (clientId: string) => {
+            setSelectedClientId(clientId);
+          };
 
-  const openInvoiceModal = (client: Client) => {
-    setInvoiceClient(client);
-    const modal = document.getElementById('invoice_modal') as HTMLDialogElement;
-    if (modal) modal.showModal();
+          const openInvoiceModal = (client: Client) => {
+            setInvoiceClient(client);
+            const modal = document.getElementById('invoice_modal') as HTMLDialogElement;
+            if (modal) modal.showModal();
   };
 
   const handleRemoveClientFromLive = async (clientId: string) => {
