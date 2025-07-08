@@ -490,12 +490,12 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
               </tr>
               <tr>
                 <th className="text-center"></th>
-                <th className="text-lg text-center">Nom</th>
-                <th className="text-lg text-center">Adresse</th>
-                <th className="text-lg text-center">Contact</th>
-                <th className="text-lg text-center">Articles</th>
-                <th className="text-lg text-center">Total</th>
-                <th className="text-lg text-center">Actions</th>
+                <th className="text-lg">Nom</th>
+                <th className="text-lg">Adresse</th>
+                <th className="text-lg">Contact</th>
+                <th className="text-lg">Articles</th>
+                <th className="text-lg">Total</th>
+                <th className="text-lg">Actions</th>
               </tr>
             </thead>
             <tbody>
