@@ -558,7 +558,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
         onChange={(e) => handleCheckboxChange(client.id, order.id, e.target.checked)}
         className="checkbox checkbox-xs"
         title="Livré et payé"
-      />
+    />
     </div>
   ))}
 
