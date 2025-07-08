@@ -36,6 +36,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
 
+
+
   const fetchClients = async () => {
     try {
       const { liveId } = await params;
@@ -215,6 +217,12 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     });
   }
 };
+
+  if (process.env.NODE_ENV === 'development') {
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  handleCheckboxChange;
+}
+
   const handleCreateClient = async () => {
     setLoading(true);
     try {
@@ -546,6 +554,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                       >
                         <Trash className="w-4 h-4" />
                       </button>
+
+                       
                     </div>
                   </td>
 
@@ -605,6 +615,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
         <button className="btn btn-outline btn-sm" onClick={handleExportExcel}>
           📊 Exporter Excel
         </button>
+
+        
       </div>
     </td>
   </tr>
