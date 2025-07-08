@@ -37,7 +37,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
 
 
-
+  
   const fetchClients = async () => {
     try {
       const { liveId } = await params;
@@ -217,12 +217,6 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     });
   }
 };
-
-  if (process.env.NODE_ENV === 'development') {
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  handleCheckboxChange;
-}
-
   const handleCreateClient = async () => {
     setLoading(true);
     try {
