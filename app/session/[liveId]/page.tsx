@@ -559,7 +559,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
      <input
         type="checkbox"
         checked={order.isDeliveredAndPaid}
-        onChange={() => handleCheckboxChange(client.id, order.id, !order.isDeliveredAndPaid)}
+        onChange={handleCheckboxChange.bind(null, client.id, order.id, !order.isDeliveredAndPaid)}
         className="checkbox checkbox-xs"
         title="Livré et payé"
       />
