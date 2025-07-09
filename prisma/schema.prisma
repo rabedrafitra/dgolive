@@ -18,6 +18,7 @@ model Association {
        clients      Client[]
        createdAt    DateTime      @default(now())
        updatedAt    DateTime      @updatedAt
+       balance      Float         @default(0.0) // Nouveau champ pour le solde de la caisse
      }
 
 model Product {
@@ -65,7 +66,7 @@ model Transaction {
   model Live {
        id             String        @id @default(uuid())
        name           String
-       description    String?
+       description    Float?        // Changé de String? à Float?, reste nullable
        date           DateTime      @default(now())
        associationId  String?
        association    Association?  @relation(fields: [associationId], references: [id])
