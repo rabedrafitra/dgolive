@@ -17,20 +17,7 @@ export interface OrderItem {
     availableQuantity: number;
 };
 
-// export interface Transaction extends PrismaTransaction {
-//     categoryName: string;
-//     productName: string;
-//     imageUrl?: string;
-//     price: number;
-//     unit: string;
-// }
 
-// export interface ProductOverviewStats {
-//     totalProducts: number;
-//     totalCategories: number;
-//     totalTransactions: number;
-//     stockValue: number;
-// }
 
 export interface ChartData {
     name: string;
