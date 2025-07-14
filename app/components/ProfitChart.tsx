@@ -14,7 +14,7 @@ interface ProfitData {
   date: string;
   profit: number;
   orderCount: number;
-  totalRevenue: number;
+  totalPaidAndCollected: number;
   liveSessionCount: number;
 }
 
@@ -43,13 +43,13 @@ const ProfitChart = ({ email }: ProfitChartProps) => {
         for (const live of livesData) {
           const orders = await getOrdersByLiveId(live.id);
           const ordersArray = Object.values(orders).flat();
-          const totalCollected = ordersArray.reduce(
+          const totalPaidAndCollected = ordersArray.reduce(
             (sum: number, item: { price: number; isDeliveredAndPaid: boolean }) =>
               sum + (item.isDeliveredAndPaid ? item.price : 0),
             0
           );
           const orderCount = ordersArray.filter((item) => item.isDeliveredAndPaid).length;
-          const profit = totalCollected - (live.purchasePrice ?? 0);
+          const profit = totalPaidAndCollected - (live.purchasePrice ?? 0);
           const date = new Date(live.date).toLocaleDateString('fr-FR', {
             day: '2-digit',
             month: '2-digit',
@@ -61,14 +61,14 @@ const ProfitChart = ({ email }: ProfitChartProps) => {
               date,
               profit: 0,
               orderCount: 0,
-              totalRevenue: 0,
+              totalPaidAndCollected: 0,
               liveSessionCount: 0,
             };
           }
 
           dataByDate[date].profit += profit;
           dataByDate[date].orderCount += orderCount;
-          dataByDate[date].totalRevenue += totalCollected;
+          dataByDate[date].totalPaidAndCollected += totalPaidAndCollected;
           dataByDate[date].liveSessionCount += 1;
         }
 
@@ -146,7 +146,7 @@ const ProfitChart = ({ email }: ProfitChartProps) => {
               <Legend />
               <Bar dataKey="profit" fill="#10B981" name="Profit (Ar)" />
               <Bar dataKey="orderCount" fill="#FBBF24" name="Commandes" />
-              <Bar dataKey="totalRevenue" fill="#3B82F6" name="Chiffre d'affaires (Ar)" />
+              <Bar dataKey="totalPaidAndCollected" fill="#3B82F6" name="Total payé et collecté (Ar)" />
               <Bar dataKey="liveSessionCount" fill="#8B5CF6" name="Sessions Live" />
             </BarChart>
           </ResponsiveContainer>
@@ -158,7 +158,7 @@ const ProfitChart = ({ email }: ProfitChartProps) => {
               Total des commandes : {filteredData.reduce((sum, data) => sum + data.orderCount, 0).toLocaleString('fr-FR')}
             </p>
             <p className="text-lg font-bold text-white">
-              Total chiffre affaires : {filteredData.reduce((sum, data) => sum + data.totalRevenue, 0).toLocaleString('fr-FR')} Ar
+              Chiffre Affaire: {filteredData.reduce((sum, data) => sum + data.totalPaidAndCollected, 0).toLocaleString('fr-FR')} Ar
             </p>
             <p className="text-lg font-bold text-white">
               Total sessions live : {filteredData.reduce((sum, data) => sum + data.liveSessionCount, 0).toLocaleString('fr-FR')}
