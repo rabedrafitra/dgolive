@@ -143,7 +143,7 @@ const Page = () => {
                   <th>Date</th>
                   <th>Nom</th>
                   <th>Description</th>
-                  <th>Input (Ar)</th>
+                  <th>Input Price (Ar)</th>
                   <th>Actions</th>
                 </tr>
               </thead>
