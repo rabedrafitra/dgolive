@@ -54,7 +54,8 @@ export async function getAssociation(email: string) {
 export async function createLive(
     name: string,
     email: string,
-    description?: string
+    description?: string,
+    purchasePrice?: number
 ) {
 
     if (!name) return
@@ -67,7 +68,7 @@ export async function createLive(
         await prisma.live.create({
             data: {
                 name,
-                // description: description ?? null,
+                purchasePrice: purchasePrice ?? null,
                 description: description || "",
                 associationId: association.id,
                 date: new Date() 
@@ -211,7 +212,8 @@ export async function updateLive(
     id: string,
     email: string,
     name: string,
-    description?: string
+    description?: string,
+    purchasePrice?: number
 ) {
 
     if (!id || !email || !name) {
@@ -231,7 +233,8 @@ export async function updateLive(
             },
             data: {
                 name,
-                description: description ?? null,
+                description: description || "",
+                purchasePrice: purchasePrice ?? null,
             }
         })
 

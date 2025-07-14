@@ -8,7 +8,7 @@ import EmptyState from '../components/EmptyState';
 import { Pencil, Trash, CirclePlay } from 'lucide-react';
 import Link from 'next/link';
 import LiveModal from '../components/LiveModal';
-import { createLive, readLives, updateLive, deleteLive} from '../actions';
+import { createLive, readLives, updateLive, deleteLive } from '../actions';
 import { toast } from 'react-toastify';
 
 const Page = () => {
@@ -17,6 +17,7 @@ const Page = () => {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState<number | undefined>(undefined); // Changement ici
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
@@ -31,7 +32,7 @@ const Page = () => {
         const data = await readLives(email);
         if (data) {
           setLives(data);
-          setCurrentPage(1); // Réinitialiser à la première page
+          setCurrentPage(1);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des sessions :', error);
@@ -47,11 +48,10 @@ const Page = () => {
     }
   }, [email]);
 
-  // Calculer le total global des commandes et le nombre d'articles
-
   const openCreateModal = () => {
     setName('');
     setDescription('');
+    setPurchasePrice(undefined); // Réinitialiser à undefined
     setEditMode(false);
     (document.getElementById('live_modal') as HTMLDialogElement)?.showModal();
   };
@@ -59,6 +59,7 @@ const Page = () => {
   const closeModal = () => {
     setName('');
     setDescription('');
+    setPurchasePrice(undefined); // Réinitialiser à undefined
     setEditMode(false);
     setEditingLiveId(null);
     (document.getElementById('live_modal') as HTMLDialogElement)?.close();
@@ -67,7 +68,7 @@ const Page = () => {
   const handleCreateLive = async () => {
     setLoading(true);
     if (email) {
-      await createLive(name, email, description);
+      await createLive(name, email, description, purchasePrice); // purchasePrice est déjà number | undefined
     }
     await loadLives();
     closeModal();
@@ -79,7 +80,7 @@ const Page = () => {
     if (!editingLiveId) return;
     setLoading(true);
     if (email) {
-      await updateLive(editingLiveId, email, name, description);
+      await updateLive(editingLiveId, email, name, description, purchasePrice); // purchasePrice est déjà number | undefined
     }
     await loadLives();
     closeModal();
@@ -100,18 +101,17 @@ const Page = () => {
   const openEditModal = (live: Live) => {
     setName(live.name);
     setDescription(live.description || '');
+    setPurchasePrice(live.purchasePrice ?? undefined); // Charger purchasePrice
     setEditMode(true);
     setEditingLiveId(live.id);
     (document.getElementById('live_modal') as HTMLDialogElement)?.showModal();
   };
 
-  // Calculer les sessions à afficher pour la page courante
   const totalPages = Math.ceil(lives.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentLives = lives.slice(startIndex, endIndex);
 
-  // Gérer les changements de page
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -143,6 +143,7 @@ const Page = () => {
                   <th>Date</th>
                   <th>Nom</th>
                   <th>Description</th>
+                  <th>Prix d'achat (Ar)</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -153,6 +154,7 @@ const Page = () => {
                     <td>{live.date.toLocaleDateString()}</td>
                     <td>{live.name}</td>
                     <td>{live.description || '-'}</td>
+                    <td>{live.purchasePrice ? `${live.purchasePrice} Ar` : '-'}</td>
                     <td className="flex gap-2">
                       <Link
                         className="btn btn-sm w-fit"
@@ -179,7 +181,6 @@ const Page = () => {
               </tbody>
             </table>
 
-            {/* Barre de pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-4">
                 <button
@@ -211,8 +212,6 @@ const Page = () => {
                 </button>
               </div>
             )}
-
-          
           </>
         )}
       </div>
@@ -220,10 +219,12 @@ const Page = () => {
       <LiveModal
         name={name}
         description={description}
+        purchasePrice={purchasePrice}
         loading={loading}
         onclose={closeModal}
         onChangeName={setName}
         onChangeDescription={setDescription}
+        onChangePurchasePrice={setPurchasePrice}
         onSubmit={editMode ? handleUpdateLive : handleCreateLive}
         editMode={editMode}
       />
