@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs';
 import Wrapper from './components/Wrapper';
 import ProductOverview from './components/ProductOverview';
 import StockSummaryTable from './components/StockSummaryTable';
-import ProfitTable from './components/ProfitTable'; // Remplacer ProfitChart par ProfitTable
+import ProfitChart from './components/ProfitChart';
 
 export default function Home() {
   const { user } = useUser();
@@ -16,7 +16,7 @@ export default function Home() {
         <div className="md:w-2/3">
           <ProductOverview email={email} />
           
-          <ProfitTable email={email} />
+          <ProfitChart email={email} />
         </div>
         <div className="md:ml-4 md:mt-0 mt-4 md:w-1/3">
           <StockSummaryTable email={email} />

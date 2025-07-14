@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { readLives, getOrdersByLiveId } from '@/app/actions';
-import { Live } from '@prisma/client';
 import EmptyState from './EmptyState';
 import { TrendingUp } from 'lucide-react';
 
-interface ProfitTableProps {
+interface ProfitChartProps {
   email: string;
 }
 
@@ -18,7 +18,7 @@ interface ProfitData {
   liveSessionCount: number;
 }
 
-const ProfitTable = ({ email }: ProfitTableProps) => {
+const ProfitChart = ({ email }: ProfitChartProps) => {
   const [profitData, setProfitData] = useState<ProfitData[]>([]);
   const [startDate, setStartDate] = useState<string>(
     new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
@@ -38,7 +38,6 @@ const ProfitTable = ({ email }: ProfitTableProps) => {
           return;
         }
 
-        // Regrouper les données par date
         const dataByDate: { [date: string]: ProfitData } = {};
 
         for (const live of livesData) {
@@ -73,7 +72,6 @@ const ProfitTable = ({ email }: ProfitTableProps) => {
           dataByDate[date].liveSessionCount += 1;
         }
 
-        // Convertir l'objet en tableau, filtrer les dates sans sessions live, et trier par date
         const profitData: ProfitData[] = Object.values(dataByDate)
           .filter((data) => data.liveSessionCount > 0)
           .sort((a, b) =>
@@ -101,7 +99,7 @@ const ProfitTable = ({ email }: ProfitTableProps) => {
     <div className="mt-6 bg-base-100 rounded-3xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
         <TrendingUp className="w-6 h-6 text-primary" />
-        Profit par période
+        Métriques par période
       </h2>
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1">
@@ -136,68 +134,40 @@ const ProfitTable = ({ email }: ProfitTableProps) => {
         />
       ) : (
         <div className="overflow-x-auto">
-          <table className="table w-full">
-            <thead>
-              <tr className="bg-primary/10 text-white">
-                <th className="text-left py-3">Date</th>
-                <th className="text-right py-3">Profit (Ar)</th>
-                <th className="text-right py-3">Commandes</th>
-                <th className="text-right py-3">Chiffre d'affaires (Ar)</th>
-                <th className="text-right py-3">Sessions Live</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((data, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-base-200 transition-colors duration-200"
-                >
-                  <td className="py-3">{data.date}</td>
-                  <td className="text-right py-3 font-semibold text-green-400">
-                    {data.profit.toLocaleString('fr-FR')} Ar
-                  </td>
-                  <td className="text-right py-3 font-semibold text-yellow-400">
-                    {data.orderCount.toLocaleString('fr-FR')}
-                  </td>
-                  <td className="text-right py-3 font-semibold text-blue-400">
-                    {data.totalRevenue.toLocaleString('fr-FR')} Ar
-                  </td>
-                  <td className="text-right py-3 font-semibold text-purple-400">
-                    {data.liveSessionCount.toLocaleString('fr-FR')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-primary/10 text-white font-bold">
-                <td className="py-3">Total</td>
-                <td className="text-right py-3">
-                  {filteredData
-                    .reduce((sum, data) => sum + data.profit, 0)
-                    .toLocaleString('fr-FR')} Ar
-                </td>
-                <td className="text-right py-3">
-                  {filteredData
-                    .reduce((sum, data) => sum + data.orderCount, 0)
-                    .toLocaleString('fr-FR')}
-                </td>
-                <td className="text-right py-3">
-                  {filteredData
-                    .reduce((sum, data) => sum + data.totalRevenue, 0)
-                    .toLocaleString('fr-FR')} Ar
-                </td>
-                <td className="text-right py-3">
-                  {filteredData
-                    .reduce((sum, data) => sum + data.liveSessionCount, 0)
-                    .toLocaleString('fr-FR')}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={filteredData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
+              <XAxis dataKey="date" stroke="#F3F4F6" />
+              <YAxis stroke="#F3F4F6" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1F2937', border: 'none', color: '#F3F4F6' }}
+                cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
+              />
+              <Legend />
+              <Bar dataKey="profit" fill="#10B981" name="Profit (Ar)" />
+              <Bar dataKey="orderCount" fill="#FBBF24" name="Commandes" />
+              <Bar dataKey="totalRevenue" fill="#3B82F6" name="Chiffre d'affaires (Ar)" />
+              <Bar dataKey="liveSessionCount" fill="#8B5CF6" name="Sessions Live" />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-4 text-center">
+            <p className="text-lg font-bold text-white">
+              Total des profits : {filteredData.reduce((sum, data) => sum + data.profit, 0).toLocaleString('fr-FR')} Ar
+            </p>
+            <p className="text-lg font-bold text-white">
+              Total des commandes : {filteredData.reduce((sum, data) => sum + data.orderCount, 0).toLocaleString('fr-FR')}
+            </p>
+            <p className="text-lg font-bold text-white">
+              Total chiffre affaires : {filteredData.reduce((sum, data) => sum + data.totalRevenue, 0).toLocaleString('fr-FR')} Ar
+            </p>
+            <p className="text-lg font-bold text-white">
+              Total sessions live : {filteredData.reduce((sum, data) => sum + data.liveSessionCount, 0).toLocaleString('fr-FR')}
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default ProfitTable;
+export default ProfitChart;
