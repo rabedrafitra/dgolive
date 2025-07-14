@@ -4,7 +4,6 @@ import { useUser } from '@clerk/nextjs';
 import Wrapper from './components/Wrapper';
 import ProductOverview from './components/ProductOverview';
 import StockSummaryTable from './components/StockSummaryTable';
-import LiveTab from './components/LiveTab';
 import ProfitTable from './components/ProfitTable'; // Remplacer ProfitChart par ProfitTable
 
 export default function Home() {
