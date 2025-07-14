@@ -492,7 +492,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
 
               <tr>
                 <th colSpan={8} className="text-lg text-center py-2">
-                  Coût Entrée: {live?.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : 'N/A'}
+                  Purchase Price: {live?.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : 'N/A'}
                 </th>
               </tr>
               <tr>
