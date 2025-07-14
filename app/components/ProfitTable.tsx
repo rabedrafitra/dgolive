@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { readLives, getOrdersByLiveId } from '@/app/actions';
-import { Live } from '@prisma/client';
 import EmptyState from './EmptyState';
 
 interface ProfitChartProps {
