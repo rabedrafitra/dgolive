@@ -35,7 +35,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   }>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
-
+  const totalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
+  const profit = totalCollected - (live?.purchasePrice || 0);
 
   
   const fetchClients = async () => {
@@ -488,6 +489,12 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
+
+              <tr>
+                <th colSpan={8} className="text-lg text-center py-2">
+                  Coût d'entrée : {live?.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : 'N/A'}
+                </th>
+              </tr>
               <tr>
                 <th className="text-center"></th>
                 <th className="text-lg">Nom</th>
@@ -600,6 +607,18 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       </span>
     </td>
   </tr>
+
+  <tr>
+       <td colSpan={5} className="text-right pr-4">
+              <span className="text-lg font-bold text-purple-600">Profit :</span>
+                </td>
+                <td colSpan={3} className="text-lg font-bold text-purple-600 text-center">
+                  <span>
+                    {profit.toLocaleString('fr-FR')} Ar
+                  </span>
+                </td>
+              </tr>
+
   <tr>
     <td colSpan={8} className="text-center">
       <div className="mt-2 flex gap-2 justify-center">
