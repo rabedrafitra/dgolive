@@ -2,12 +2,12 @@ import React from 'react';
 
 interface Props {
   name: string;
-  description: number;
+  description: string;
 //   purchasePrice: number | ''; // Nouveau champ pour le prix d'achat
   loading: boolean;
   onclose: () => void;
   onChangeName: (value: string) => void;
-  onChangeDescription: (value: number | '') => void; // Nouveau gestionnaire
+  onChangeDescription: (value: string) => void,
 //   onChangePurchasePrice: (value: number | '') => void; // Nouveau gestionnaire
   onSubmit: () => void;
   editMode?: boolean;
@@ -51,8 +51,7 @@ const LiveModal: React.FC<Props> = ({
           type="text"
           placeholder="Description"
           value={description}
-                    onChange={(e) => onChangeDescription(e.target.value ? Number(e.target.value) : '')}
-
+          onChange={(e) => onChangeDescription(e.target.value)}
           className="input input-bordered w-full mb-4"
           disabled={loading}
         />
