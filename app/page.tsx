@@ -1,24 +1,23 @@
-"use client"
-import { useUser } from "@clerk/nextjs";
-import Wrapper from "./components/Wrapper";
-import ProductOverview from "./components/ProductOverview";
-import StockSummaryTable from "./components/StockSummaryTable";
+'use client';
 
-import LiveTab from "./components/LiveTab";
-
+import { useUser } from '@clerk/nextjs';
+import Wrapper from './components/Wrapper';
+import ProductOverview from './components/ProductOverview';
+import StockSummaryTable from './components/StockSummaryTable';
+import LiveTab from './components/LiveTab';
+import ProfitTable from './components/ProfitTable'; // Remplacer ProfitChart par ProfitTable
 
 export default function Home() {
-
-  const { user } = useUser()
-  const email = user?.primaryEmailAddress?.emailAddress as string
-
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress as string;
 
   return (
     <Wrapper>
       <div className="flex flex-col md:flex-row">
         <div className="md:w-2/3">
           <ProductOverview email={email} />
-          <LiveTab email={email} />
+          
+          <ProfitTable email={email} />
         </div>
         <div className="md:ml-4 md:mt-0 mt-4 md:w-1/3">
           <StockSummaryTable email={email} />
