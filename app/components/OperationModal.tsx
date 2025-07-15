@@ -50,7 +50,7 @@ const OperationModal = ({ email, isOpen, onClose }: OperationModalProps) => {
         <h2 className="text-2xl font-bold text-white mb-4">Nouvelle opération</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium text-white mb-1 block">Type d'opération</label>
+            <label className="text-sm font-medium text-white mb-1 block">Type Operation</label>
             <select
               value={operationType}
               onChange={(e) => setOperationType(e.target.value)}
