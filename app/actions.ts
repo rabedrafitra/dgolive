@@ -2,7 +2,7 @@
 
 import prisma from "./lib/prisma"
 // import { FormDataType, Product, ProductOverviewStats, StockSummary, Transaction } from "@/type"
-import {  Live, Client } from "@prisma/client"
+import {  Live, Client, Operation } from "@prisma/client"
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 
@@ -793,5 +793,66 @@ export async function handleCheckboxChange(
       checked,
     });
     return orders; // Retourne l'état inchangé en cas d'erreur
+  }
+}
+
+
+
+export async function createOperation(
+  email: string,
+  operationType: string,
+  amount: number,
+  reason?: string
+): Promise<void> {
+  try {
+    const association = await getAssociation(email);
+    if (!association) {
+      throw new Error('Aucune association trouvée pour cet email.');
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.operation.create({
+        data: {
+          operationType,
+          amount,
+          reason,
+          associationId: association.id,
+        },
+      });
+      await tx.association.update({
+        where: { id: association.id },
+        data: {
+          balance: {
+            increment: amount,
+          },
+        },
+      });
+    });
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'opération :', error);
+    throw new Error('Impossible de créer l\'opération');
+  }
+}
+
+export async function readOperations(email: string): Promise<{
+  operations: Operation[];
+  balance: number;
+}> {
+  try {
+    const association = await getAssociation(email);
+    if (!association) {
+      throw new Error(`Aucune association trouvée pour l'email : ${email}`);
+    }
+    const operations = await prisma.operation.findMany({
+      where: { associationId: association.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      operations,
+      balance: association.balance,
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération des opérations :', error);
+    throw new Error('Impossible de récupérer les opérations');
   }
 }
