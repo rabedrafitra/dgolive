@@ -1,112 +1,124 @@
 generator client {
-       provider = "prisma-client-js"
-     }
+  provider = "prisma-client-js"
+}
 
- datasource db {
-       provider = "postgresql"
-       url      = env("DATABASE_URL")
-     }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 model Association {
-       id           String        @id @default(uuid())
-       name         String
-       email        String        @unique
-       products     Product[]
-       categories   Category[]
-       transactions Transaction[]
-       lives        Live[]
-       clients      Client[]
-       createdAt    DateTime      @default(now())
-       updatedAt    DateTime      @updatedAt
-       balance      Float         @default(0.0) // Nouveau champ pour le solde de la caisse
-     }
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  products     Product[]
+  categories   Category[]
+  transactions Transaction[]
+  lives        Live[]
+  clients      Client[]
+  operations   Operation[]   // Nouvelle relation avec Operation
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  balance      Float         @default(0.0) // Solde de la caisse
+}
 
 model Product {
-       id             String        @id @default(uuid())
-       name           String
-       description    String
-       price          Float
-       quantity       Int           @default(0)
-       unit           String
-       imageUrl       String
-       categoryId     String
-       associationId  String?
-       category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-       association    Association?  @relation(fields: [associationId], references: [id])
-       transactions   Transaction[]
-       createdAt      DateTime      @default(now())
-       updatedAt      DateTime      @updatedAt
-     }
+  id             String        @id @default(uuid())
+  name           String
+  description    String
+  price          Float
+  quantity       Int           @default(0)
+  unit           String
+  imageUrl       String
+  categoryId     String
+  associationId  String?
+  category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  association    Association?  @relation(fields: [associationId], references: [id])
+  transactions   Transaction[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
 
 model Category {
-       id             String        @id @default(uuid())
-       name           String
-       description    String?
-       associationId  String?
-       association    Association?  @relation(fields: [associationId], references: [id])
-       products       Product[]
-       createdAt      DateTime      @default(now())
-       updatedAt      DateTime      @updatedAt
-     }
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  associationId  String?
+  association    Association?  @relation(fields: [associationId], references: [id])
+  products       Product[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
 
 model Transaction {
-       id             String        @id @default(uuid())
-       type           String
-       quantity       Int
-       productId      String
-       associationId  String?
-       product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-       association    Association?  @relation(fields: [associationId], references: [id])
-       clientId       String?
-       client         Client?       @relation(fields: [clientId], references: [id])
-       createdAt      DateTime      @default(now())
-       updatedAt      DateTime      @updatedAt
-     }
+  id             String        @id @default(uuid())
+  type           String
+  quantity       Int
+  productId      String
+  associationId  String?
+  product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  association    Association?  @relation(fields: [associationId], references: [id])
+  clientId       String?
+  client         Client?       @relation(fields: [clientId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
 
-  model Live {
-       id             String        @id @default(uuid())
-       name           String
-       description    String?       
-       date           DateTime      @default(now())
-       associationId  String?
-       association    Association?  @relation(fields: [associationId], references: [id])
-       liveClients    LiveClient[]
-       createdAt      DateTime      @default(now())
-       updatedAt      DateTime      @updatedAt
-       purchasePrice  Float?        // Nouveau champ pour le prix d'achat
-     }
+model Live {
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  date           DateTime      @default(now())
+  associationId  String?
+  association    Association?  @relation(fields: [associationId], references: [id])
+  liveClients    LiveClient[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  purchasePrice  Float?        // Prix d'achat
+}
 
-     model Client {
-       id             String        @id @default(uuid())
-       name           String
-       address        String
-       tel            String
-       associationId  String?
-       association    Association?  @relation(fields: [associationId], references: [id])
-       liveClients    LiveClient[]
-       transactions   Transaction[]
-       createdAt      DateTime      @default(now())
-     }
+model Client {
+  id             String        @id @default(uuid())
+  name           String
+  address        String
+  tel            String
+  associationId  String?
+  association    Association?  @relation(fields: [associationId], references: [id])
+  liveClients    LiveClient[]
+  transactions   Transaction[]
+  createdAt      DateTime      @default(now())
+}
 
-     model LiveClient {
-       id             String        @id @default(uuid())
-       liveId         String
-       clientId       String
-       totalFacture   Float         @default(0)
-       live           Live          @relation(fields: [liveId], references: [id], onDelete: Cascade)
-       client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-       orderItems     OrderItem[]
-       createdAt      DateTime      @default(now())
-       @@unique([liveId, clientId])
-     }
+model LiveClient {
+  id             String        @id @default(uuid())
+  liveId         String
+  clientId       String
+  totalFacture   Float         @default(0)
+  live           Live          @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
+  createdAt      DateTime      @default(now())
+  @@unique([liveId, clientId])
+}
 
-     model OrderItem {
-       id             String        @id @default(uuid())
-       liveClientId   String
-       reference      String
-       quantity       Int
-       unitPrice      Float
-       liveClient     LiveClient    @relation(fields: [liveClientId], references: [id], onDelete: Cascade)
-       createdAt      DateTime      @default(now())
-       isDeliveredAndPaid Boolean     @default(false)
-     }
+model OrderItem {
+  id                String        @id @default(uuid())
+  liveClientId      String
+  reference         String
+  quantity          Int
+  unitPrice         Float
+  liveClient        LiveClient    @relation(fields: [liveClientId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+  isDeliveredAndPaid Boolean      @default(false)
+}
+
+model Operation {
+  id             String        @id @default(uuid())
+  operationType  String        // Type d'opération (ex. "Dépôt", "Retrait", "Ajustement")
+  amount         Float         // Montant (positif pour crédit, négatif pour débit)
+  reason         String?       // Motif optionnel
+  associationId  String
+  association    Association   @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
