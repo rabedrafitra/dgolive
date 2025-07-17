@@ -627,7 +627,18 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
                   </span>
                 </td>
               </tr>
+
               <tr>
+            <td colSpan={6} className="text-right pr-4">
+              <span className="text-lg font-bold text-gray-800">Solde :</span>
+            </td>
+            <td colSpan={3} className="text-lg font-bold text-gray-800 text-center">
+              <span>
+                {balance.toLocaleString('fr-FR')} Ar
+              </span>
+            </td>
+          </tr>
+                        <tr>
                 <td colSpan={9} className="text-center">
                   <div className="mt-2 flex gap-2 justify-center">
                     <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
