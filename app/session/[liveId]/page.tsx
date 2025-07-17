@@ -1,6 +1,6 @@
 'use client';
 
-import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus } from '@/app/actions';
+import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, createOperation, readOperations } from '@/app/actions';
 import Wrapper from '@/app/components/Wrapper';
 import { useUser } from '@clerk/nextjs';
 import { Client, Live } from '@prisma/client';
@@ -35,10 +35,11 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   }>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
+  const [balance, setBalance] = useState<number>(0); // Solde de la caisse
+
   const totalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
   const profit = totalCollected - (live?.purchasePrice || 0);
 
-  
   const fetchClients = async () => {
     try {
       const { liveId } = await params;
@@ -109,14 +110,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     setLoading(true);
     try {
       const { liveId } = await params;
-      console.log('Ajout du client à la session:', { clientId: client.id, liveId });
-
       await addClientToLive(liveId, client.id);
-      console.log('Client ajouté avec succès');
-
       await fetchClients();
-      console.log('Liste des clients mise à jour');
-
       setLeftSearchQuery('');
       setLeftSearchResults([]);
       toast.success(`Client ${client.name} ajouté à la session.`);
@@ -168,6 +163,20 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     }
   }, [email, params]);
 
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (email) {
+        try {
+          const { balance } = await readOperations(email);
+          setBalance(balance);
+        } catch (error) {
+          console.error('Erreur lors de la récupération du solde:', error);
+        }
+      }
+    };
+    fetchBalance();
+  }, [email, orders]); // Mise à jour du solde quand les ordres changent
+
   const openCreateModal = () => {
     setName('');
     setAdress('');
@@ -184,78 +193,84 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     (document.getElementById('client_modal') as HTMLDialogElement)?.close();
   };
 
+const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
+  if (!clientId || !orderId) {
+    console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
+    return;
+  }
+  const clientOrders = orders[clientId] || [];
+  const orderExists = clientOrders.some((order) => order.id === orderId);
+  if (!orderExists) {
+    console.error('Erreur: commande non trouvée', { clientId, orderId });
+    return;
+  }
+  try {
+    await updateOrderItemStatus(orderId, checked);
+    const orderToUpdate = clientOrders.find((order) => order.id === orderId);
+    if (orderToUpdate) {
+      const amount = checked ? orderToUpdate.price : -orderToUpdate.price;
+      const reason = checked ? `achat article ${orderToUpdate.ref}` : `annulation achat ${orderToUpdate.ref}`;
+      await createOperation(email, checked ? 'crédit' : 'débit', amount, reason);
+      setOrders((prev) => {
+        const updatedOrders = prev[clientId].map((order) =>
+          order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
+        );
+        return { ...prev, [clientId]: updatedOrders };
+      });
+      // Synchroniser le solde avec totalCollected
+      const newTotalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
+      const adjustment = newTotalCollected - totalCollected; // Différence à appliquer
+      if (adjustment !== 0) {
+        await createOperation(email, adjustment > 0 ? 'crédit' : 'débit', Math.abs(adjustment), `ajustement total collecté`);
+      }
+      const { balance } = await readOperations(email); // Mettre à jour le solde
+      setBalance(balance);
+      toast.success(`Statut de la commande ${orderToUpdate.ref} mis à jour avec succès.`);
+    }
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut de la commande:', { error, clientId, orderId, checked });
+    toast.error('Erreur lors de la mise à jour de la commande.');
+  }
+};
 
-  const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
-            if (!clientId || !orderId) {
-              console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
-              return;
-            }
-            const clientOrders = orders[clientId] || [];
-            const orderExists = clientOrders.some(
-              (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) => order.id === orderId
-            );
-            if (!orderExists) {
-              console.error('Erreur: commande non trouvée', { clientId, orderId });
-              return;
-            }
-            try {
-              await updateOrderItemStatus(orderId, checked);
-              setOrders((prev) => {
-                const clientOrders = prev[clientId] || [];
-                const updatedOrders = clientOrders.map(
-                  (order: { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }) =>
-                    order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
-                );
-                return { ...prev, [clientId]: updatedOrders };
-              });
-              console.log('Statut de la commande mis à jour !');
-            } catch (error) {
-              console.error('Erreur lors de la mise à jour du statut de la commande:', {
-                error,
-                clientId,
-                orderId,
-                checked,
-              });
-            }
-                  };
-                    const handleCreateClient = async () => {
-                      setLoading(true);
-                      try {
-                        const { liveId } = await params;
-                        if (email && liveId) {
-                          await createClient(name, adress, tel, email, liveId);
-                        }
-                        await fetchClients();
-                        closeModal();
-                        toast.success('Client ajouté avec succès.');
-                      } catch (error) {
-                        console.error('Erreur création client:', error);
-                        toast.error("Erreur lors de l'ajout du client.");
-                      } finally {
-                        setLoading(false);
-                      }
-          };
+  const handleCreateClient = async () => {
+    setLoading(true);
+    try {
+      const { liveId } = await params;
+      if (email && liveId) {
+        await createClient(name, adress, tel, email, liveId);
+      }
+      await fetchClients();
+      closeModal();
+      toast.success('Client ajouté avec succès.');
+    } catch (error) {
+      console.error('Erreur création client:', error);
+      toast.error('Erreur lors de l\'ajout du client.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          const handleUpdateClient = async () => {
-            if (!editingClientId) return;
-            setLoading(true);
-            if (email) {
-              await updateClient(editingClientId, name, adress, tel, email);
-            }
-            await fetchClients();
-            closeModal();
-            setLoading(false);
-            toast.success('Information client mise à jour avec succès.');
-          };
+  const handleUpdateClient = async () => {
+    if (!editingClientId) return;
+    setLoading(true);
+    if (email) {
+      await updateClient(editingClientId, name, adress, tel, email);
+    }
+    await fetchClients();
+    closeModal();
+    setLoading(false);
+    toast.success('Information client mise à jour avec succès.');
+  };
 
-          const openOrderModal = (clientId: string) => {
-            setSelectedClientId(clientId);
-          };
+  const openOrderModal = (clientId: string) => {
+    setSelectedClientId(clientId);
+  };
 
-          const openInvoiceModal = (client: Client) => {
-            setInvoiceClient(client);
-            const modal = document.getElementById('invoice_modal') as HTMLDialogElement;
-            if (modal) modal.showModal();
+  const openInvoiceModal = (client: Client) => {
+    setInvoiceClient(client);
+    const modal = document.getElementById('invoice_modal') as HTMLDialogElement;
+    if (modal) modal.showModal();
   };
 
   const handleRemoveClientFromLive = async (clientId: string) => {
@@ -291,7 +306,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
         reference: ref,
         quantity: 1,
         unitPrice: price,
-        isDeliveredAndPaid: false, // Ajout
+        isDeliveredAndPaid: false,
       });
       setOrders((prev) => {
         const currentOrders = prev[clientId] || [];
@@ -303,8 +318,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
               id: newOrder.id,
               ref: newOrder.reference,
               price: newOrder.unitPrice * newOrder.quantity,
-              isDeliveredAndPaid: false, // Ajout
-
+              isDeliveredAndPaid: false,
             },
           ],
         };
@@ -312,7 +326,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       toast.success('Commande ajoutée avec succès !');
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors de l'ajout de la commande.");
+      toast.error('Erreur lors de l\'ajout de la commande.');
     } finally {
       setSelectedClientId(null);
     }
@@ -437,7 +451,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
               )}
             </div>
             <div className="relative w-full max-w-sm">
-              <div className="flex items-center border border-gray-300 Rounded-md bg-white">
+              <div className="flex items-center border border-gray-300 rounded-md bg-white">
                 <input
                   type="text"
                   className="input input-sm input-bordered w-full rounded-md py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -485,13 +499,12 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
           <table className="table">
             <thead>
               <tr>
-                <th colSpan={8} className="text-3xl font-bold text-center py-4 text-primary">
+                <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
-
               <tr>
-                <th colSpan={8} className="text-lg text-center py-2">
+                <th colSpan={9} className="text-lg text-center py-2">
                   Purchase Price: {live?.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : 'N/A'}
                 </th>
               </tr>
@@ -502,16 +515,18 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                 <th className="text-lg">Contact</th>
                 <th className="text-lg">Articles</th>
                 <th className="text-lg">Total</th>
+                
                 <th className="text-lg">Actions</th>
+                <th className="text-lg">Payé</th>
               </tr>
             </thead>
             <tbody>
               {clients.map((client, index) => (
                 <tr key={client.id}>
-                  <th >{index + 1}</th>
-                  <td >{client.name}</td>
+                  <th>{index + 1}</th>
+                  <td>{client.name}</td>
                   <td>{client.address}</td>
-                  <td >{client.tel}</td>
+                  <td>{client.tel}</td>
                   <td className="w-64">
                     {(orders[client.id] || []).map((order, idx) => (
                       <div key={idx} className="text-sm">
@@ -525,6 +540,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                   <td className="font-semibold text-center">
                     {(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0)} Ar
                   </td>
+                  
                   <td className="align-middle">
                     <div className="flex gap-2 justify-center">
                       <button
@@ -555,62 +571,55 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                       >
                         <Trash className="w-4 h-4" />
                       </button>
-
-                       
                     </div>
                   </td>
 
                   <td>
-  {(orders[client.id] || []).map((order, idx) => (
-    <div key={idx} className="text-sm flex items-center gap-2">
-     <input
-        type="checkbox"
-        checked={order.isDeliveredAndPaid}
-        onChange={handleCheckboxChange.bind(null, client.id, order.id, !order.isDeliveredAndPaid)}
-        className="checkbox checkbox-xs"
-        title="Livré et payé"
-      />
-    </div>
-  ))}
-
-</td>
+                    {(orders[client.id] || []).map((order, idx) => (
+                      <div key={idx} className="text-sm flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={order.isDeliveredAndPaid}
+                          onChange={(e) => handleCheckboxChange(client.id, order.id, e.target.checked)}
+                          className="checkbox checkbox-xs"
+                          title="Livré et payé"
+                        />
+                      </div>
+                    ))}
+                  </td>
                 </tr>
               ))}
-             
             </tbody>
             <tfoot>
-  <tr className="border-t">
-    <td colSpan={5} className="text-right pr-4">
-      <span className="text-lg font-bold text-green-600">Total général :</span>
-    </td>
-    <td colSpan={3} className="text-lg font-bold text-green-600 text-center">
-      <span>
-        {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0)} Ar
-      </span>
-      <span className="ml-4 text-blue-600">
-        ({Object.values(orders).flat().length} articles)
-      </span>
-    </td>
-  </tr>
-  <tr>
-    <td colSpan={5} className="text-right pr-4">
-      <span className="text-lg font-bold text-blue-600">Total collecté (livré et payé) :</span>
-    </td>
-    <td colSpan={3} className="text-lg font-bold text-blue-600 text-center">
-      <span>
-        {Object.values(orders)
-          .flat()
-          .reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0)} Ar
-      </span>
-      <span className="ml-4 text-blue-600">
-        ({Object.values(orders).flat().filter((item) => item.isDeliveredAndPaid).length} articles)
-      </span>
-    </td>
-  </tr>
-
-  <tr>
-       <td colSpan={5} className="text-right pr-4">
-              <span className="text-lg font-bold text-purple-600">Profit :</span>
+              <tr className="border-t">
+                <td colSpan={6} className="text-right pr-4">
+                  <span className="text-lg font-bold text-green-600">Total général :</span>
+                </td>
+                <td colSpan={3} className="text-lg font-bold text-green-600 text-center">
+                  <span>
+                    {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0)} Ar
+                  </span>
+                  <span className="ml-4 text-blue-600">
+                    ({Object.values(orders).flat().length} articles)
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={6} className="text-right pr-4">
+                  <span className="text-lg font-bold text-blue-600">Total collecté (livré et payé) :</span>
+                </td>
+                <td colSpan={3} className="text-lg font-bold text-blue-600 text-center">
+                  <span>
+                    {totalCollected.toLocaleString('fr-FR')} Ar
+                  </span>
+                  <span className="ml-4 text-blue-600">
+                    ({Object.values(orders).flat().filter((item) => item.isDeliveredAndPaid).length} articles)
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={6} className="text-right pr-4">
+                  <span className="text-lg font-bold text-purple-600">Profit :</span>
                 </td>
                 <td colSpan={3} className="text-lg font-bold text-purple-600 text-center">
                   <span>
@@ -618,28 +627,25 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
                   </span>
                 </td>
               </tr>
-
-  <tr>
-    <td colSpan={8} className="text-center">
-      <div className="mt-2 flex gap-2 justify-center">
-        <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
-          🖨️ Imprimer Liste
-        </button>
-        <button className="btn btn-outline btn-sm" onClick={handleExportExcel}>
-          📊 Exporter Excel
-        </button>
-
-        
-      </div>
-    </td>
-  </tr>
-</tfoot>
+              <tr>
+                <td colSpan={9} className="text-center">
+                  <div className="mt-2 flex gap-2 justify-center">
+                    <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
+                      🖨️ Imprimer Liste
+                    </button>
+                    <button className="btn btn-outline btn-sm" onClick={handleExportExcel}>
+                      📊 Exporter Excel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         )}
       </div>
-      <div className='mb-4'>
-        <button className='btn btn-primary' onClick={openCreateModal}>
-          <UserRoundPlus className='w-12 h-12' />
+      <div className="mb-4">
+        <button className="btn btn-primary" onClick={openCreateModal}>
+          <UserRoundPlus className="w-12 h-12" />
         </button>
       </div>
 
