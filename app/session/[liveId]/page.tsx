@@ -35,7 +35,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   }>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
-  const [balance, setBalance] = useState<number>(0); // Solde de la caisse
+  const [balance, setBalance] = useState<number>(0);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null); // Nouvel état pour l'ordre de tri
 
   const totalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
   const profit = totalCollected - (live?.purchasePrice || 0);
@@ -175,7 +176,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       }
     };
     fetchBalance();
-  }, [email, orders]); // Mise à jour du solde quand les ordres changent
+  }, [email, orders]);
 
   const openCreateModal = () => {
     setName('');
@@ -193,45 +194,44 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     (document.getElementById('client_modal') as HTMLDialogElement)?.close();
   };
 
-const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
-  if (!clientId || !orderId) {
-    console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
-    return;
-  }
-  const clientOrders = orders[clientId] || [];
-  const orderExists = clientOrders.some((order) => order.id === orderId);
-  if (!orderExists) {
-    console.error('Erreur: commande non trouvée', { clientId, orderId });
-    return;
-  }
-  try {
-    await updateOrderItemStatus(orderId, checked);
-    const orderToUpdate = clientOrders.find((order) => order.id === orderId);
-    if (orderToUpdate) {
-      const amount = checked ? orderToUpdate.price : -orderToUpdate.price;
-      const reason = checked ? `achat article ${orderToUpdate.ref}` : `annulation achat ${orderToUpdate.ref}`;
-      await createOperation(email, checked ? 'crédit' : 'débit', amount, reason);
-      setOrders((prev) => {
-        const updatedOrders = prev[clientId].map((order) =>
-          order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
-        );
-        return { ...prev, [clientId]: updatedOrders };
-      });
-      // Synchroniser le solde avec totalCollected
-      const newTotalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
-      const adjustment = newTotalCollected - totalCollected; // Différence à appliquer
-      if (adjustment !== 0) {
-        await createOperation(email, adjustment > 0 ? 'crédit' : 'débit', Math.abs(adjustment), `ajustement total collecté`);
-      }
-      const { balance } = await readOperations(email); // Mettre à jour le solde
-      setBalance(balance);
-      toast.success(`Statut de la commande ${orderToUpdate.ref} mis à jour avec succès.`);
+  const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
+    if (!clientId || !orderId) {
+      console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
+      return;
     }
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour du statut de la commande:', { error, clientId, orderId, checked });
-    toast.error('Erreur lors de la mise à jour de la commande.');
-  }
-};
+    const clientOrders = orders[clientId] || [];
+    const orderExists = clientOrders.some((order) => order.id === orderId);
+    if (!orderExists) {
+      console.error('Erreur: commande non trouvée', { clientId, orderId });
+      return;
+    }
+    try {
+      await updateOrderItemStatus(orderId, checked);
+      const orderToUpdate = clientOrders.find((order) => order.id === orderId);
+      if (orderToUpdate) {
+        const amount = checked ? orderToUpdate.price : -orderToUpdate.price;
+        const reason = checked ? `achat article ${orderToUpdate.ref}` : `annulation achat ${orderToUpdate.ref}`;
+        await createOperation(email, checked ? 'crédit' : 'débit', amount, reason);
+        setOrders((prev) => {
+          const updatedOrders = prev[clientId].map((order) =>
+            order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
+          );
+          return { ...prev, [clientId]: updatedOrders };
+        });
+        const newTotalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
+        const adjustment = newTotalCollected - totalCollected;
+        if (adjustment !== 0) {
+          await createOperation(email, adjustment > 0 ? 'crédit' : 'débit', Math.abs(adjustment), `ajustement total collecté`);
+        }
+        const { balance } = await readOperations(email);
+        setBalance(balance);
+        toast.success(`Statut de la commande ${orderToUpdate.ref} mis à jour avec succès.`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut de la commande:', { error, clientId, orderId, checked });
+      toast.error('Erreur lors de la mise à jour de la commande.');
+    }
+  };
 
   const handleCreateClient = async () => {
     setLoading(true);
@@ -332,6 +332,22 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
     }
   };
 
+  // Fonction pour trier les clients par ordre alphabétique
+  const handleSortClients = () => {
+    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newSortOrder);
+    const sortedClients = [...clients].sort((a, b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      if (newSortOrder === 'asc') {
+        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+      } else {
+        return nameA > nameB ? -1 : nameA < nameB ? 1 : 0;
+      }
+    });
+    setClients(sortedClients);
+  };
+
   const formattedDate = live?.date
     ? format(new Date(live.date), 'EEEE d MMMM yyyy', { locale: fr })
     : '';
@@ -417,6 +433,12 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
             <button className="btn btn-primary" onClick={openCreateModal}>
               <UserRoundPlus className="w-5 h-5 mr-2" />
               Ajouter un Client à la Session
+            </button>
+            <button
+              className="btn btn-outline btn-sm ml-4"
+              onClick={handleSortClients}
+            >
+              Trier par nom ({sortOrder === 'asc' ? 'A-Z' : sortOrder === 'desc' ? 'Z-A' : 'Par défaut'})
             </button>
           </div>
           <div className="flex justify-between gap-4">
@@ -515,7 +537,6 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
                 <th className="text-lg">Contact</th>
                 <th className="text-lg">Articles</th>
                 <th className="text-lg">Total</th>
-                
                 <th className="text-lg">Actions</th>
                 <th className="text-lg">Payé</th>
               </tr>
@@ -540,7 +561,6 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
                   <td className="font-semibold text-center">
                     {(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0)} Ar
                   </td>
-                  
                   <td className="align-middle">
                     <div className="flex gap-2 justify-center">
                       <button
@@ -573,7 +593,6 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
                       </button>
                     </div>
                   </td>
-
                   <td>
                     {(orders[client.id] || []).map((order, idx) => (
                       <div key={idx} className="text-sm flex items-center gap-2">
@@ -627,18 +646,17 @@ const handleCheckboxChange = async (clientId: string, orderId: string, checked: 
                   </span>
                 </td>
               </tr>
-
               <tr>
-            <td colSpan={6} className="text-right pr-4">
-              <span className="text-lg font-bold text-gray-800">Solde :</span>
-            </td>
-            <td colSpan={3} className="text-lg font-bold text-gray-800 text-center">
-              <span>
-                {balance.toLocaleString('fr-FR')} Ar
-              </span>
-            </td>
-          </tr>
-                        <tr>
+                <td colSpan={6} className="text-right pr-4">
+                  <span className="text-lg font-bold text-gray-800">Solde :</span>
+                </td>
+                <td colSpan={3} className="text-lg font-bold text-gray-800 text-center">
+                  <span>
+                    {balance.toLocaleString('fr-FR')} Ar
+                  </span>
+                </td>
+              </tr>
+              <tr>
                 <td colSpan={9} className="text-center">
                   <div className="mt-2 flex gap-2 justify-center">
                     <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
