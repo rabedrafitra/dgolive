@@ -11,8 +11,7 @@ import Wrapper from '@/app/components/Wrapper';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const ITEMS_PER_PAGE = 20;
-
+const ITEMS_PER_PAGE = 30;
 const AllClientsPage = () => {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress as string;
