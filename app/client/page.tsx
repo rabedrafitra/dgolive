@@ -11,7 +11,7 @@ import Wrapper from '@/app/components/Wrapper';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const AllClientsPage = () => {
   const { user } = useUser();
