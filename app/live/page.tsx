@@ -17,70 +17,45 @@ const Page = () => {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [purchasePrice, setPurchasePrice] = useState<number | undefined>(undefined); // Changement ici
+  const [purchasePrice, setPurchasePrice] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
   const [month, setMonth] = useState(new Date());
 
- const [lives, setLives] = useState<
-  (Live & {
-    totalAmount?: number;
-    totalArticles?: number;
-  })[]
->([]);
+  const [lives, setLives] = useState<
+    (Live & {
+      totalAmount?: number;
+      totalArticles?: number;
+    })[]
+  >([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-//   const loadLives = async () => {
-//     if (email) {
-//       try {
-//         setLoading(true);
-//         const data = await readLives(email);
-//         if (data) {
-//           setLives(data);
-//           setCurrentPage(1);
-//         }
-//       } catch (error) {
-//         console.error('Erreur lors du chargement des sessions :', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     }
-//   };
+  const loadLives = async (d = month) => {
+    if (!email) return;
+    try {
+      setLoading(true);
+      const data = await readLives(email, d);
+      setLives(data || []);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-//    useEffect(() => {
-//     if (email) {
-//       loadLives();
-//     }
-//   }, [email]);
-  
-const loadLives = async (d = month) => {
-  if (!email) return;
-
-  try {
-    setLoading(true);
-    const data = await readLives(email, d);
-    setLives(data || []);
-    setCurrentPage(1);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => {
-  if (!email) return;
-  loadLives(month);
-}, [email, month]);
- 
+  useEffect(() => {
+    if (!email) return;
+    loadLives(month);
+  }, [email, month]);
 
   const openCreateModal = () => {
     setName('');
     setDescription('');
-    setPurchasePrice(undefined); // Réinitialiser à undefined
+    setPurchasePrice(undefined);
     setEditMode(false);
     (document.getElementById('live_modal') as HTMLDialogElement)?.showModal();
   };
@@ -88,7 +63,7 @@ useEffect(() => {
   const closeModal = () => {
     setName('');
     setDescription('');
-    setPurchasePrice(undefined); // Réinitialiser à undefined
+    setPurchasePrice(undefined);
     setEditMode(false);
     setEditingLiveId(null);
     (document.getElementById('live_modal') as HTMLDialogElement)?.close();
@@ -97,7 +72,7 @@ useEffect(() => {
   const handleCreateLive = async () => {
     setLoading(true);
     if (email) {
-      await createLive(name, email, description, purchasePrice); // purchasePrice est déjà number | undefined
+      await createLive(name, email, description, purchasePrice);
     }
     await loadLives();
     closeModal();
@@ -109,7 +84,7 @@ useEffect(() => {
     if (!editingLiveId) return;
     setLoading(true);
     if (email) {
-      await updateLive(editingLiveId, email, name, description, purchasePrice); // purchasePrice est déjà number | undefined
+      await updateLive(editingLiveId, email, name, description, purchasePrice);
     }
     await loadLives();
     closeModal();
@@ -118,9 +93,7 @@ useEffect(() => {
   };
 
   const handleDeleteLive = async (liveId: string) => {
-    const confirmDelete = confirm(
-      'Voulez-vous vraiment supprimer cette session live ?'
-    );
+    const confirmDelete = confirm('Voulez-vous vraiment supprimer cette session live ?');
     if (!confirmDelete) return;
     await deleteLive(liveId, email);
     await loadLives();
@@ -130,7 +103,7 @@ useEffect(() => {
   const openEditModal = (live: Live) => {
     setName(live.name);
     setDescription(live.description || '');
-    setPurchasePrice(live.purchasePrice ?? undefined); // Charger purchasePrice
+    setPurchasePrice(live.purchasePrice ?? undefined);
     setEditMode(true);
     setEditingLiveId(live.id);
     (document.getElementById('live_modal') as HTMLDialogElement)?.showModal();
@@ -142,10 +115,10 @@ useEffect(() => {
   const currentLives = lives.slice(startIndex, endIndex);
 
   const changeMonth = (step: number) => {
-  const newMonth = new Date(month);
-  newMonth.setMonth(newMonth.getMonth() + step);
-  setMonth(newMonth);
-};
+    const newMonth = new Date(month);
+    newMonth.setMonth(newMonth.getMonth() + step);
+    setMonth(newMonth);
+  };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -156,132 +129,136 @@ useEffect(() => {
   return (
     <Wrapper>
       <div className="overflow-x-auto">
-        <div className="mb-4">
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
           <button className="btn btn-primary" onClick={openCreateModal}>
             Ouvrir une Session Live
           </button>
         </div>
 
         {lives.length === 0 ? (
-          <div>
-            <EmptyState
-              message="Pas encore de session LIVE"
-              IconComponent="CirclePlay"
-            />
-          </div>
+          <EmptyState
+            message="Pas encore de session LIVE"
+            IconComponent="CirclePlay"
+          />
         ) : (
           <>
-          <h1 className="text-xl md:text-2xl font-bold mb-4">
-            Live du mois de{" "}
-            {month.toLocaleDateString("fr-FR", {
-              month: "long",
-              year: "numeric",
-            })}
-        </h1>
+            <h1 className="text-xl md:text-2xl font-bold mb-4">
+              Live du mois de{" "}
+              {month.toLocaleDateString("fr-FR", {
+                month: "long",
+                year: "numeric",
+              })}
+            </h1>
 
-        <div className="flex flex-col md:flex-row gap-2 mb-4">
-            <button className="btn btn-sm" onClick={() => changeMonth(-1)}>
-              ⬅ Mois précédent
-            </button>
+            {/* Navigation Mois */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              <button className="btn btn-sm" onClick={() => changeMonth(-1)}>
+                ⬅ Mois précédent
+              </button>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={() => setMonth(new Date())}
+              >
+                Aujourd’hui
+              </button>
+              <button className="btn btn-sm" onClick={() => changeMonth(1)}>
+                Mois suivant ➡
+              </button>
+            </div>
 
-            <button
-              className="btn btn-sm btn-outline"
-              onClick={() => setMonth(new Date())}
-            >
-              Aujourd’hui
-            </button>
-
-            <button className="btn btn-sm" onClick={() => changeMonth(1)}>
-              Mois suivant ➡
-            </button>
-  </div>
-            <table className="table">
+            <table className="table table-zebra w-full">
               <thead>
                 <tr>
-                  <th></th>
+                  <th className="w-8">#</th>
                   <th>Date</th>
                   <th>Nom</th>
-                  <th>Description</th>
-                  <th>Input Price (Ar)</th>
-                  <th>Nb Articles</th>
-                  <th>Total Articles (Ar)</th>
-                  <th>Actions</th>
+                  <th className="hidden md:table-cell">Description</th>
+                  <th className="hidden lg:table-cell">Input Price (Ar)</th>
+                  <th className="text-center">Articles</th>
+                  <th className="text-right">Total (Ar)</th>
+                  <th className="text-center w-32">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentLives.map((live, index) => (
                   <tr key={live.id}>
-                    <th>{startIndex + index + 1}</th>
-                    <td>{live.date.toLocaleDateString()}</td>
-                    <td>{live.name}</td>
-                    <td>{live.description || '-'}</td>
-                    <td>{live.purchasePrice ? `${live.purchasePrice} Ar` : '-'}</td>
+                    <th className="text-center">{startIndex + index + 1}</th>
+                    <td className="whitespace-nowrap">{live.date.toLocaleDateString('fr-FR')}</td>
+                    <td className="font-medium">{live.name}</td>
+                    <td className="hidden md:table-cell text-sm text-gray-600 max-w-xs truncate">
+                      {live.description || '-'}
+                    </td>
+                    <td className="hidden lg:table-cell">
+                      {live.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : '-'}
+                    </td>
                     <td className="font-semibold text-center text-blue-600">
                       {live.totalArticles || 0}
                     </td>
-
-                    <td className="font-semibold text-center text-green-600">
+                    <td className="font-semibold text-right text-green-600">
                       {(live.totalAmount || 0).toLocaleString('fr-FR')} Ar
                     </td>
-                    <td className="flex gap-2">
-                      <Link
-                        className="btn btn-sm w-fit"
-                        href={`/session/${live.id}`}
-                        title="Commencer Live"
-                      >
-                        <CirclePlay className="w-4 h-4" />
-                      </Link>
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => openEditModal(live)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-error"
-                        onClick={() => handleDeleteLive(live.id)}
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
+                    <td>
+                      <div className="flex flex-wrap gap-1 justify-center">
+                        <Link
+                          className="btn btn-sm btn-success"
+                          href={`/session/${live.id}`}
+                          title="Commencer Live"
+                        >
+                          <CirclePlay className="w-4 h-4" />
+                        </Link>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => openEditModal(live)}
+                          title="Modifier"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-error"
+                          onClick={() => handleDeleteLive(live.id)}
+                          title="Supprimer"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
- {totalPages > 1 && (
-  <div className="flex flex-wrap justify-center gap-2 mt-4">
-    
-    <button
-      className="btn btn-xs md:btn-sm"
-      onClick={() => goToPage(currentPage - 1)}
-      disabled={currentPage === 1}
-    >
-      Précédent
-    </button>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-wrap justify-center gap-2 mt-6">
+                <button
+                  className="btn btn-sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </button>
 
-    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-      <button
-        key={page}
-        className={`btn btn-xs md:btn-sm ${
-          currentPage === page ? "btn-primary" : ""
-        }`}
-        onClick={() => goToPage(page)}
-      >
-        {page}
-      </button>
-    ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`btn btn-sm ${
+                      currentPage === page ? "btn-primary" : ""
+                    }`}
+                    onClick={() => goToPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
 
-    <button
-      className="btn btn-xs md:btn-sm"
-      onClick={() => goToPage(currentPage + 1)}
-      disabled={currentPage === totalPages}
-    >
-      Suivant
-    </button>
-
-  </div>
-)}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
