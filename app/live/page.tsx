@@ -8,7 +8,14 @@ import EmptyState from '../components/EmptyState';
 import { Pencil, Trash, CirclePlay } from 'lucide-react';
 import Link from 'next/link';
 import LiveModal from '../components/LiveModal';
-import { createLive, readLives, updateLive, deleteLive } from '../actions';
+import { 
+  createLive,
+  readLives,
+  updateLive,
+  deleteLive,
+  getOrdersByLiveId,
+  readClientsByLiveId
+} from '../actions';
 import { toast } from 'react-toastify';
 
 const Page = () => {
@@ -22,31 +29,119 @@ const Page = () => {
   const [editMode, setEditMode] = useState(false);
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
   const [month, setMonth] = useState(new Date());
+  
 
   const [lives, setLives] = useState<
     (Live & {
       totalAmount?: number;
       totalArticles?: number;
+      totalCollected?: number;
+      clientsWithOrders?: number;
+      clientsDelivered?: number;
     })[]
   >([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const loadLives = async (d = month) => {
-    if (!email) return;
-    try {
-      setLoading(true);
-      const data = await readLives(email, d);
-      setLives(data || []);
-      setCurrentPage(1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const loadLives = async (d = month) => {
+  //   if (!email) return;
+  //   try {
+  //     setLoading(true);
+  //     const data = await readLives(email, d);
+  //     setLives(data || []);
+  //     setCurrentPage(1);
+  //   } catch (error) {
+  //     console.error(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
+  const loadLives = async (d = month) => {
+  if (!email) return;
+
+  try {
+    setLoading(true);
+
+    const data = await readLives(email, d);
+
+    if (!data) {
+      setLives([]);
+      return;
+    }
+
+    const enrichedLives = await Promise.all(
+      data.map(async (live) => {
+        try {
+          const orders = await getOrdersByLiveId(live.id);
+          const clients = (await readClientsByLiveId(live.id, email)) || [];
+
+          const allOrders = Object.values(orders || {}).flat();
+
+          const totalArticles = allOrders.length;
+
+          const totalCollected = clients.reduce((sum, client) => {
+            const clientOrders = orders?.[client.id] || [];
+
+            const allPaid =
+              clientOrders.length > 0 &&
+              clientOrders.every((o) => o.isDeliveredAndPaid);
+
+            return allPaid
+              ? sum +
+                  clientOrders.reduce(
+                    (acc, cur) => acc + cur.price,
+                    0
+                  )
+              : sum;
+          }, 0);
+
+          const clientsWithOrders = clients.filter(
+            (client) => (orders?.[client.id] || []).length > 0
+          ).length;
+
+          const clientsDelivered = clients.filter((client) => {
+            const clientOrders = orders?.[client.id] || [];
+
+            return (
+              clientOrders.length > 0 &&
+              clientOrders.every((o) => o.isDeliveredAndPaid)
+            );
+          }).length;
+
+          return {
+            ...live,
+            totalArticles,
+            totalCollected,
+            clientsWithOrders,
+            clientsDelivered,
+          };
+        } catch (error) {
+          console.error(
+            `Erreur stats live ${live.id}:`,
+            error
+          );
+
+          return {
+            ...live,
+            totalArticles: 0,
+            totalCollected: 0,
+            clientsWithOrders: 0,
+            clientsDelivered: 0,
+          };
+        }
+      })
+    );
+
+    setLives(enrichedLives);
+    setCurrentPage(1);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (!email) return;
     loadLives(month);
@@ -155,10 +250,7 @@ const Page = () => {
               <button className="btn btn-sm" onClick={() => changeMonth(-1)}>
                 ⬅ Mois précédent
               </button>
-              <button
-                className="btn btn-sm btn-outline"
-                onClick={() => setMonth(new Date())}
-              >
+              <button className="btn btn-sm btn-outline" onClick={() => setMonth(new Date())}>
                 Aujourd’hui
               </button>
               <button className="btn btn-sm" onClick={() => changeMonth(1)}>
@@ -172,10 +264,10 @@ const Page = () => {
                   <th className="w-8">#</th>
                   <th>Date</th>
                   <th>Nom</th>
-                  <th className="hidden md:table-cell">Description</th>
-                  <th className="hidden lg:table-cell">Input Price (Ar)</th>
+                  <th className="text-center">Clients avec commande</th>
+                  <th className="text-center">Clients livrés</th>
                   <th className="text-center">Articles</th>
-                  <th className="text-right">Total (Ar)</th>
+                  <th className="text-right">Total Collecté</th>
                   <th className="text-center w-32">Actions</th>
                 </tr>
               </thead>
@@ -185,24 +277,26 @@ const Page = () => {
                     <th className="text-center">{startIndex + index + 1}</th>
                     <td className="whitespace-nowrap">{live.date.toLocaleDateString('fr-FR')}</td>
                     <td className="font-medium">{live.name}</td>
-                    <td className="hidden md:table-cell text-sm text-gray-600 max-w-xs truncate">
-                      {live.description || '-'}
+                    
+                    <td className="text-center font-semibold text-blue-600">
+                      {live.clientsWithOrders ?? 0}
                     </td>
-                    <td className="hidden lg:table-cell">
-                      {live.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : '-'}
+                    <td className="text-center font-semibold text-green-600">
+                      {live.clientsDelivered ?? 0}
                     </td>
                     <td className="font-semibold text-center text-blue-600">
-                      {live.totalArticles || 0}
+                      {live.totalArticles ?? 0}
                     </td>
                     <td className="font-semibold text-right text-green-600">
-                      {(live.totalAmount || 0).toLocaleString('fr-FR')} Ar
+                      {(live.totalCollected ?? 0).toLocaleString('fr-FR')} Ar
                     </td>
+                    
                     <td>
                       <div className="flex flex-wrap gap-1 justify-center">
                         <Link
                           className="btn btn-sm btn-success"
                           href={`/session/${live.id}`}
-                          title="Commencer Live"
+                          title="Ouvrir Session"
                         >
                           <CirclePlay className="w-4 h-4" />
                         </Link>
@@ -241,9 +335,7 @@ const Page = () => {
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
-                    className={`btn btn-sm ${
-                      currentPage === page ? "btn-primary" : ""
-                    }`}
+                    className={`btn btn-sm ${currentPage === page ? "btn-primary" : ""}`}
                     onClick={() => goToPage(page)}
                   >
                     {page}

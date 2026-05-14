@@ -569,7 +569,7 @@ const handlePrintOrders = () => {
                     </span>
                     
                     <span>
-                      <strong>Commandes :</strong>{' '}
+                      <strong>Clients :</strong>{' '}
                       <span className="text-green-600 font-semibold">
                         {clients.filter(client => (orders[client.id] || []).length > 0).length}
                       </span>
@@ -583,7 +583,7 @@ const handlePrintOrders = () => {
                     </span>
 
                     <span>
-                      <strong>Commandes livrés :</strong>{' '}
+                      <strong>Clients livrés :</strong>{' '}
                       <span className="text-green-600 font-semibold">
                         {clients.filter(client => {
                           const clientOrders = orders[client.id] || [];
