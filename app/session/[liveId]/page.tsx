@@ -36,7 +36,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
   const [balance, setBalance] = useState<number>(0);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null); // Nouvel état pour l'ordre de tri
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   const totalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
   const profit = totalCollected - (live?.purchasePrice || 0);
@@ -326,13 +326,12 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
       toast.success('Commande ajoutée avec succès !');
     } catch (error) {
       console.error(error);
-      toast.error('Erreur lors de l\'ajout de la commande.');
+      toast.error('Erreur lors de l’ajout de la commande.');
     } finally {
       setSelectedClientId(null);
     }
   };
 
-  // Fonction pour trier les clients par ordre alphabétique
   const handleSortClients = () => {
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newSortOrder);
@@ -351,59 +350,6 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const formattedDate = live?.date
     ? format(new Date(live.date), 'EEEE d MMMM yyyy', { locale: fr })
     : '';
-
-  // const handlePrintOrders = () => {
-  //   const printContent = `
-  //     <html>
-  //       <head>
-  //         <title>Liste des Commandes - ${live?.name || 'Session'}</title>
-  //         <style>
-  //           body { font-family: Arial, sans-serif; margin: 20px; }
-  //           h1 { text-align: center; }
-  //           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  //           th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-  //           th { background-color: #f2f2f2; }
-  //           .total { font-weight: bold; }
-  //         </style>
-  //       </head>
-  //       <body>
-  //         <h1>Liste des Commandes - ${live?.name || 'Session'} (${formattedDate})</h1>
-  //         <table>
-  //           <thead>
-  //             <tr>
-  //               <th>#</th>
-  //               <th>Nom</th>
-  //               <th>Contact</th>
-  //               <th>Total (Ar)</th>
-  //             </tr>
-  //           </thead>
-  //           <tbody>
-  //             ${clients.map((client, index) => `
-  //               <tr>
-  //                 <td>${index + 1}</td>
-  //                 <td>${client.name}</td>
-  //                 <td>${client.tel || 'N/A'}</td>
-  //                 <td>${(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0).toLocaleString('fr-FR')} Ar</td>
-  //               </tr>
-  //             `).join('')}
-  //           </tbody>
-  //           <tfoot>
-  //             <tr class="total">
-  //               <td colspan="3">Total général :</td>
-  //               <td>${Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar</td>
-  //             </tr>
-  //           </tfoot>
-  //         </table>
-  //       </body>
-  //     </html>
-  //   `;
-  //   const printWindow = window.open('', '', 'width=800,height=600');
-  //   if (printWindow) {
-  //     printWindow.document.write(printContent);
-  //     printWindow.document.close();
-  //     printWindow.print();
-  //   }
-  // };
 
 const handlePrintOrders = () => {
   const totalArticles = Object.values(orders).flat().length;
@@ -484,6 +430,7 @@ const handlePrintOrders = () => {
     printWindow.print();
   }
 };
+
   const handleExportExcel = () => {
     const data = clients.map((client, index) => ({
       '#': index + 1,
@@ -508,20 +455,21 @@ const handlePrintOrders = () => {
     <Wrapper>
       <div className="overflow-x-auto">
         <div className="mb-4 flex flex-col gap-4">
-          <div>
+          <div className="flex flex-col sm:flex-row gap-3">
             <button className="btn btn-primary" onClick={openCreateModal}>
               <UserRoundPlus className="w-5 h-5 mr-2" />
               Ajouter un Client à la Session
             </button>
             <button
-              className="btn btn-outline btn-sm ml-4"
+              className="btn btn-outline btn-sm"
               onClick={handleSortClients}
             >
               Trier par nom ({sortOrder === 'asc' ? 'A-Z' : sortOrder === 'desc' ? 'Z-A' : 'Par défaut'})
             </button>
           </div>
-          <div className="flex justify-between gap-4">
-            <div className="relative w-full max-w-sm">
+
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative w-full">
               <div className="flex items-center border border-gray-300 rounded-md bg-white">
                 <input
                   type="text"
@@ -538,7 +486,7 @@ const handlePrintOrders = () => {
                 <span className="loading loading-spinner loading-xs absolute right-8 top-2.5 text-gray-500" />
               )}
               {leftSearchResults.length > 0 && (
-                <ul className="absolute z-20 bg-white border border-gray-300 w-full max-w-sm mt-1 max-h-60 overflow-y-auto rounded-md shadow-lg">
+                <ul className="absolute z-20 bg-white border border-gray-300 w-full mt-1 max-h-60 overflow-y-auto rounded-md shadow-lg">
                   {leftSearchResults.map((client) => (
                     <li
                       key={client.id}
@@ -551,7 +499,8 @@ const handlePrintOrders = () => {
                 </ul>
               )}
             </div>
-            <div className="relative w-full max-w-sm">
+
+            <div className="relative w-full">
               <div className="flex items-center border border-gray-300 rounded-md bg-white">
                 <input
                   type="text"
@@ -597,10 +546,10 @@ const handlePrintOrders = () => {
             <EmptyState message="Pas encore de Client" IconComponent="User" />
           </div>
         ) : (
-          <table className="table">
+          <table className="table min-w-[950px]">
             <thead>
               <tr>
-                <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
+                <th colSpan={9} className="text-2xl md:text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
@@ -612,7 +561,7 @@ const handlePrintOrders = () => {
               <tr>
                 <th className="text-center"></th>
                 <th className="text-lg">Nom</th>
-                <th className="text-lg">Adresse</th>
+                <th className="text-lg hidden md:table-cell">Adresse</th>
                 <th className="text-lg">Contact</th>
                 <th className="text-lg">Articles</th>
                 <th className="text-lg">Total</th>
@@ -625,7 +574,7 @@ const handlePrintOrders = () => {
                 <tr key={client.id}>
                   <th>{index + 1}</th>
                   <td>{client.name}</td>
-                  <td>{client.address}</td>
+                  <td className="hidden md:table-cell">{client.address}</td>
                   <td>{client.tel}</td>
                   <td className="w-64">
                     {(orders[client.id] || []).map((order, idx) => (
@@ -641,7 +590,7 @@ const handlePrintOrders = () => {
                     {(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0)} Ar
                   </td>
                   <td className="align-middle">
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <button
                         className="btn btn-sm btn-success"
                         title="Ajouter Article"
@@ -737,7 +686,7 @@ const handlePrintOrders = () => {
               </tr>
               <tr>
                 <td colSpan={9} className="text-center">
-                  <div className="mt-2 flex gap-2 justify-center">
+                  <div className="mt-2 flex flex-wrap gap-2 justify-center">
                     <button className="btn btn-outline btn-sm" onClick={handlePrintOrders}>
                       🖨️ Imprimer Liste
                     </button>
@@ -751,7 +700,8 @@ const handlePrintOrders = () => {
           </table>
         )}
       </div>
-      <div className="mb-4">
+
+      <div className="mb-4 md:hidden">
         <button className="btn btn-primary" onClick={openCreateModal}>
           <UserRoundPlus className="w-12 h-12" />
         </button>
@@ -783,6 +733,7 @@ const handlePrintOrders = () => {
       {invoiceClient && (
         <dialog id="invoice_modal" className="modal">
           <div className="modal-box max-w-2xl" id="invoice-content">
+            {/* ... (ton modal facture reste inchangé) ... */}
             <div className="flex items-center gap-4 mb-6">
               <Image
                 src="/innovas.png"
