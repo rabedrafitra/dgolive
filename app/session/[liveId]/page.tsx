@@ -36,9 +36,14 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
   const [balance, setBalance] = useState<number>(0);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null); // Nouvel état pour l'ordre de tri
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
-  const totalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
+
+  const totalCollected = clients.reduce((sum, client) => {
+    const clientOrders = orders[client.id] || [];
+    const allPaid = clientOrders.length > 0 && clientOrders.every(order => order.isDeliveredAndPaid);
+    return allPaid ? sum + clientOrders.reduce((acc, cur) => acc + cur.price, 0) : sum;
+  }, 0);
   const profit = totalCollected - (live?.purchasePrice || 0);
 
   const fetchClients = async () => {
@@ -194,44 +199,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     (document.getElementById('client_modal') as HTMLDialogElement)?.close();
   };
 
-  const handleCheckboxChange = async (clientId: string, orderId: string, checked: boolean) => {
-    if (!clientId || !orderId) {
-      console.error('Erreur: clientId ou orderId manquant', { clientId, orderId });
-      return;
-    }
-    const clientOrders = orders[clientId] || [];
-    const orderExists = clientOrders.some((order) => order.id === orderId);
-    if (!orderExists) {
-      console.error('Erreur: commande non trouvée', { clientId, orderId });
-      return;
-    }
-    try {
-      await updateOrderItemStatus(orderId, checked);
-      const orderToUpdate = clientOrders.find((order) => order.id === orderId);
-      if (orderToUpdate) {
-        const amount = checked ? orderToUpdate.price : -orderToUpdate.price;
-        const reason = checked ? `achat article ${orderToUpdate.ref}` : `annulation achat ${orderToUpdate.ref}`;
-        await createOperation(email, checked ? 'crédit' : 'débit', amount, reason);
-        setOrders((prev) => {
-          const updatedOrders = prev[clientId].map((order) =>
-            order.id === orderId ? { ...order, isDeliveredAndPaid: checked } : order
-          );
-          return { ...prev, [clientId]: updatedOrders };
-        });
-        const newTotalCollected = Object.values(orders).flat().reduce((sum, item) => sum + (item.isDeliveredAndPaid ? item.price : 0), 0);
-        const adjustment = newTotalCollected - totalCollected;
-        if (adjustment !== 0) {
-          await createOperation(email, adjustment > 0 ? 'crédit' : 'débit', Math.abs(adjustment), `ajustement total collecté`);
-        }
-        const { balance } = await readOperations(email);
-        setBalance(balance);
-        toast.success(`Statut de la commande ${orderToUpdate.ref} mis à jour avec succès.`);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du statut de la commande:', { error, clientId, orderId, checked });
-      toast.error('Erreur lors de la mise à jour de la commande.');
-    }
-  };
+
 
   const handleCreateClient = async () => {
     setLoading(true);
@@ -332,7 +300,44 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     }
   };
 
-  // Fonction pour trier les clients par ordre alphabétique
+
+    const handleClientPaymentToggle = async (clientId: string, checked: boolean) => {
+    const clientOrders = orders[clientId] || [];
+    if (clientOrders.length === 0) return;
+
+    setLoading(true);
+    try {
+      for (const order of clientOrders) {
+        await updateOrderItemStatus(order.id, checked);
+      }
+
+      setOrders((prev) => ({
+        ...prev,
+        [clientId]: prev[clientId].map((order) => ({
+          ...order,
+          isDeliveredAndPaid: checked,
+        })),
+      }));
+
+      const totalAmount = clientOrders.reduce((sum, o) => sum + o.price, 0);
+      const clientName = clients.find(c => c.id === clientId)?.name || 'Client';
+
+      await createOperation(
+        email,
+        checked ? 'crédit' : 'débit',
+        checked ? totalAmount : -totalAmount,
+        checked ? `Paiement total - ${clientName}` : `Annulation paiement - ${clientName}`
+      );
+
+      toast.success(checked ? `Tout payé pour ${clientName}` : `Paiement annulé pour ${clientName}`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erreur lors de la mise à jour du paiement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSortClients = () => {
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newSortOrder);
@@ -351,59 +356,6 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const formattedDate = live?.date
     ? format(new Date(live.date), 'EEEE d MMMM yyyy', { locale: fr })
     : '';
-
-  // const handlePrintOrders = () => {
-  //   const printContent = `
-  //     <html>
-  //       <head>
-  //         <title>Liste des Commandes - ${live?.name || 'Session'}</title>
-  //         <style>
-  //           body { font-family: Arial, sans-serif; margin: 20px; }
-  //           h1 { text-align: center; }
-  //           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  //           th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-  //           th { background-color: #f2f2f2; }
-  //           .total { font-weight: bold; }
-  //         </style>
-  //       </head>
-  //       <body>
-  //         <h1>Liste des Commandes - ${live?.name || 'Session'} (${formattedDate})</h1>
-  //         <table>
-  //           <thead>
-  //             <tr>
-  //               <th>#</th>
-  //               <th>Nom</th>
-  //               <th>Contact</th>
-  //               <th>Total (Ar)</th>
-  //             </tr>
-  //           </thead>
-  //           <tbody>
-  //             ${clients.map((client, index) => `
-  //               <tr>
-  //                 <td>${index + 1}</td>
-  //                 <td>${client.name}</td>
-  //                 <td>${client.tel || 'N/A'}</td>
-  //                 <td>${(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0).toLocaleString('fr-FR')} Ar</td>
-  //               </tr>
-  //             `).join('')}
-  //           </tbody>
-  //           <tfoot>
-  //             <tr class="total">
-  //               <td colspan="3">Total général :</td>
-  //               <td>${Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar</td>
-  //             </tr>
-  //           </tfoot>
-  //         </table>
-  //       </body>
-  //     </html>
-  //   `;
-  //   const printWindow = window.open('', '', 'width=800,height=600');
-  //   if (printWindow) {
-  //     printWindow.document.write(printContent);
-  //     printWindow.document.close();
-  //     printWindow.print();
-  //   }
-  // };
 
 const handlePrintOrders = () => {
   const totalArticles = Object.values(orders).flat().length;
@@ -484,6 +436,7 @@ const handlePrintOrders = () => {
     printWindow.print();
   }
 };
+
   const handleExportExcel = () => {
     const data = clients.map((client, index) => ({
       '#': index + 1,
@@ -599,34 +552,43 @@ const handlePrintOrders = () => {
         ) : (
           <table className="table">
             <thead>
-             
-      <tr>
+              <tr>
                 <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
-              <tr>
+                            <tr>
                 <th colSpan={9} className="text-lg text-center py-3 bg-base-200">
                   <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-base">
                     <span>
                       <strong>Total général :</strong>{' '}
                       {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar
                       <span className="text-blue-600 ml-2">
-                        ({Object.values(orders).flat().length} commandes)
+                        ({Object.values(orders).flat().length} articles)
                       </span>
                     </span>
                     
                     <span>
-                      <strong>Livré :</strong>{' '}
-                      <span className="text-green-600">
-                        {Object.values(orders).flat().filter(item => item.isDeliveredAndPaid).length} commandes
+                      <strong>Commandes :</strong>{' '}
+                      <span className="text-green-600 font-semibold">
+                        {clients.filter(client => (orders[client.id] || []).length > 0).length}
                       </span>
                     </span>
-                    
+
                     <span>
-                      <strong>Total payé :</strong>{' '}
+                      <strong>Total Livré et Payé:</strong>{' '}
                       <span className="text-green-600 font-semibold">
                         {totalCollected.toLocaleString('fr-FR')} Ar
+                      </span>
+                    </span>
+
+                    <span>
+                      <strong>Commandes livrés :</strong>{' '}
+                      <span className="text-green-600 font-semibold">
+                        {clients.filter(client => {
+                          const clientOrders = orders[client.id] || [];
+                          return clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid);
+                        }).length}
                       </span>
                     </span>
                   </div>
@@ -643,7 +605,7 @@ const handlePrintOrders = () => {
                 <th className="text-lg">Payé</th>
               </tr>
             </thead>
-            <tbody>
+            {/* <tbody>
               {clients.map((client, index) => (
                 <tr key={client.id}>
                   <th>{index + 1}</th>
@@ -695,21 +657,90 @@ const handlePrintOrders = () => {
                       </button>
                     </div>
                   </td>
-                  <td>
-                    {(orders[client.id] || []).map((order, idx) => (
-                      <div key={idx} className="text-sm flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={order.isDeliveredAndPaid}
-                          onChange={(e) => handleCheckboxChange(client.id, order.id, e.target.checked)}
-                          className="checkbox checkbox-xs"
-                          title="Livré et payé"
-                        />
-                      </div>
-                    ))}
-                  </td>
+             <td className="text-center">
+                      <input
+                        type="checkbox"
+                        checked={clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid)}
+                        onChange={(e) => handleClientPaymentToggle(client.id, e.target.checked)}
+                        className="checkbox checkbox-md"
+                        disabled={clientOrders.length === 0}
+                        title="Marquer tout comme payé"
+                      />
+                    </td>
                 </tr>
               ))}
+            </tbody> */}
+
+                        <tbody>
+              {clients.map((client, index) => {
+                const clientOrders = orders[client.id] || [];
+                const clientTotal = clientOrders.reduce((acc, cur) => acc + cur.price, 0);
+                const allPaid = clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid);
+
+                return (
+                  <tr key={client.id}>
+                    <th>{index + 1}</th>
+                    <td>{client.name}</td>
+                    <td>{client.address}</td>
+                    <td>{client.tel}</td>
+                    <td className="w-64">
+                      {clientOrders.map((order, idx) => (
+                        <div key={idx} className="text-sm">
+                          Réf {order.ref} - {order.price} Ar
+                        </div>
+                      ))}
+                      {clientOrders.length === 0 && (
+                        <div className="text-sm text-gray-500">Aucun article</div>
+                      )}
+                    </td>
+                    <td className="font-semibold text-center">
+                      {clientTotal} Ar
+                    </td>
+                    <td className="align-middle">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          className="btn btn-sm btn-success"
+                          title="Ajouter Article"
+                          onClick={() => openOrderModal(client.id)}
+                        >
+                          <PlusCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          title="Modifier Client"
+                          onClick={() => openEditModal(client)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-info"
+                          title="Facture"
+                          onClick={() => openInvoiceModal(client)}
+                        >
+                          📄
+                        </button>
+                        <button
+                          className="btn btn-sm btn-error"
+                          title="Supprimer"
+                          onClick={() => handleRemoveClientFromLive(client.id)}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="text-center">
+                      <input
+                        type="checkbox"
+                        checked={allPaid}
+                        onChange={(e) => handleClientPaymentToggle(client.id, e.target.checked)}
+                        className="checkbox checkbox-md"
+                        disabled={clientOrders.length === 0}
+                        title="Marquer tout comme payé"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="border-t">
