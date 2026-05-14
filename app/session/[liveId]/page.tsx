@@ -599,14 +599,37 @@ const handlePrintOrders = () => {
         ) : (
           <table className="table">
             <thead>
-              <tr>
+             
+      <tr>
                 <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
               <tr>
-                <th colSpan={9} className="text-lg text-center py-2">
-                  Purchase Price: {live?.purchasePrice ? `${live.purchasePrice.toLocaleString('fr-FR')} Ar` : 'N/A'}
+                <th colSpan={9} className="text-lg text-center py-3 bg-base-200">
+                  <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-base">
+                    <span>
+                      <strong>Total général :</strong>{' '}
+                      {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar
+                      <span className="text-blue-600 ml-2">
+                        ({Object.values(orders).flat().length} commandes)
+                      </span>
+                    </span>
+                    
+                    <span>
+                      <strong>Livré :</strong>{' '}
+                      <span className="text-green-600">
+                        {Object.values(orders).flat().filter(item => item.isDeliveredAndPaid).length} commandes
+                      </span>
+                    </span>
+                    
+                    <span>
+                      <strong>Total payé :</strong>{' '}
+                      <span className="text-green-600 font-semibold">
+                        {totalCollected.toLocaleString('fr-FR')} Ar
+                      </span>
+                    </span>
+                  </div>
                 </th>
               </tr>
               <tr>
