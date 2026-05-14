@@ -280,7 +280,7 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
     try {
       await deleteClientFromLive(liveId, clientId);
       await fetchClients();
-      toast.success('Client retiré de ce live.');
+      toast.success('Client retiré de ce live!.');
     } catch (error) {
       toast.error('Erreur lors du retrait du client.');
       console.error(error);
