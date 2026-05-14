@@ -6,6 +6,7 @@ import {  Live, Client, Operation } from "@prisma/client"
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 
+
 interface StatLive {
   clientCount: number; // Remplace totalProducts et stock normal
   liveSessionCount: number; // Remplace totalCategories (sessions live par mois)
@@ -80,29 +81,114 @@ export async function createLive(
     }
 }
 
-export async function readLives(email: string): Promise<Live[] | undefined> {
-    if (!email) {
-        throw new Error("l'email de l'association est  requis")
+
+
+
+// export async function readLives(email: string) {
+//   if (!email) {
+//     throw new Error("l'email de l'association est requis");
+//   }
+
+//   try {
+//     const association = await getAssociation(email);
+
+//     if (!association) {
+//       throw new Error("Aucune association trouvée avec cet email.");
+//     }
+
+//     const lives = await prisma.live.findMany({
+//       where: {
+//         associationId: association.id,
+//       },
+//       include: {
+//         liveClients: {
+//           include: {
+//             orderItems: true,
+//           },
+//         },
+//       },
+//       orderBy: {
+//         date: 'desc',
+//       },
+//     });
+
+//     return lives.map((live) => {
+//       const allOrderItems = live.liveClients.flatMap(
+//         (lc) => lc.orderItems
+//       );
+
+//       return {
+//         ...live,
+//         totalClients: live.liveClients.length,
+//         totalArticles: allOrderItems.length,
+//         totalAmount: allOrderItems.reduce(
+//           (sum, item) => sum + item.quantity * item.unitPrice,
+//           0
+//         ),
+//       };
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     return [];
+//   }
+// }
+
+export async function readLives(email: string, date: Date = new Date()) {
+  if (!email) {
+    throw new Error("l'email de l'association est requis");
+  }
+
+  try {
+    const association = await getAssociation(email);
+
+    if (!association) {
+      throw new Error("Aucune association trouvée avec cet email.");
     }
 
-    try {
-        const association = await getAssociation(email)
-        if (!association) {
-            throw new Error("Aucune association trouvée avec cet email.");
-        }
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
 
-        const lives = await prisma.live.findMany({
-            where: {
-                associationId: association.id
-            },
-              orderBy: {
-                date: 'desc' // Trie par date décroissante : la plus récente en premier
-            }
-        })
-        return lives
-    } catch (error) {
-        console.error(error)
-    }
+    const lives = await prisma.live.findMany({
+      where: {
+        associationId: association.id,
+        date: {
+          gte: start,
+          lte: end, // 👈 filtre mois
+        },
+      },
+      include: {
+        liveClients: {
+          include: {
+            orderItems: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+
+    return lives.map((live) => {
+      const allOrderItems = live.liveClients.flatMap(
+        (lc) => lc.orderItems
+      );
+
+      return {
+        ...live,
+        totalClients: live.liveClients.length,
+        totalArticles: allOrderItems.length,
+        totalAmount: allOrderItems.reduce(
+          (sum, item) => sum + item.quantity * item.unitPrice,
+          0
+        ),
+      };
+    });
+
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }
 export async function deleteLive(id: string, email: string) {
     if (!id || !email) {

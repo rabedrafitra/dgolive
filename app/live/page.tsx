@@ -21,32 +21,61 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingLiveId, setEditingLiveId] = useState<string | null>(null);
-  const [lives, setLives] = useState<Live[]>([]);
+  const [month, setMonth] = useState(new Date());
+
+ const [lives, setLives] = useState<
+  (Live & {
+    totalAmount?: number;
+    totalArticles?: number;
+  })[]
+>([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const loadLives = async () => {
-    if (email) {
-      try {
-        setLoading(true);
-        const data = await readLives(email);
-        if (data) {
-          setLives(data);
-          setCurrentPage(1);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des sessions :', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
+//   const loadLives = async () => {
+//     if (email) {
+//       try {
+//         setLoading(true);
+//         const data = await readLives(email);
+//         if (data) {
+//           setLives(data);
+//           setCurrentPage(1);
+//         }
+//       } catch (error) {
+//         console.error('Erreur lors du chargement des sessions :', error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     }
+//   };
 
-  useEffect(() => {
-    if (email) {
-      loadLives();
-    }
-  }, [email]);
+//    useEffect(() => {
+//     if (email) {
+//       loadLives();
+//     }
+//   }, [email]);
+  
+const loadLives = async (d = month) => {
+  if (!email) return;
+
+  try {
+    setLoading(true);
+    const data = await readLives(email, d);
+    setLives(data || []);
+    setCurrentPage(1);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  if (!email) return;
+  loadLives(month);
+}, [email, month]);
+ 
 
   const openCreateModal = () => {
     setName('');
@@ -112,6 +141,12 @@ const Page = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentLives = lives.slice(startIndex, endIndex);
 
+  const changeMonth = (step: number) => {
+  const newMonth = new Date(month);
+  newMonth.setMonth(newMonth.getMonth() + step);
+  setMonth(newMonth);
+};
+
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -136,6 +171,30 @@ const Page = () => {
           </div>
         ) : (
           <>
+          <h1 className="text-xl md:text-2xl font-bold mb-4">
+            Live du mois de{" "}
+            {month.toLocaleDateString("fr-FR", {
+              month: "long",
+              year: "numeric",
+            })}
+        </h1>
+
+        <div className="flex flex-col md:flex-row gap-2 mb-4">
+            <button className="btn btn-sm" onClick={() => changeMonth(-1)}>
+              ⬅ Mois précédent
+            </button>
+
+            <button
+              className="btn btn-sm btn-outline"
+              onClick={() => setMonth(new Date())}
+            >
+              Aujourd’hui
+            </button>
+
+            <button className="btn btn-sm" onClick={() => changeMonth(1)}>
+              Mois suivant ➡
+            </button>
+  </div>
             <table className="table">
               <thead>
                 <tr>
@@ -144,6 +203,8 @@ const Page = () => {
                   <th>Nom</th>
                   <th>Description</th>
                   <th>Input Price (Ar)</th>
+                  <th>Nb Articles</th>
+                  <th>Total Articles (Ar)</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -155,6 +216,13 @@ const Page = () => {
                     <td>{live.name}</td>
                     <td>{live.description || '-'}</td>
                     <td>{live.purchasePrice ? `${live.purchasePrice} Ar` : '-'}</td>
+                    <td className="font-semibold text-center text-blue-600">
+                      {live.totalArticles || 0}
+                    </td>
+
+                    <td className="font-semibold text-center text-green-600">
+                      {(live.totalAmount || 0).toLocaleString('fr-FR')} Ar
+                    </td>
                     <td className="flex gap-2">
                       <Link
                         className="btn btn-sm w-fit"
@@ -181,37 +249,39 @@ const Page = () => {
               </tbody>
             </table>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                <button
-                  className="btn btn-sm"
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Précédent
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      className={`btn btn-sm ${
-                        currentPage === page ? 'btn-primary' : ''
-                      }`}
-                      onClick={() => goToPage(page)}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
-                <button
-                  className="btn btn-sm"
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Suivant
-                </button>
-              </div>
-            )}
+ {totalPages > 1 && (
+  <div className="flex flex-wrap justify-center gap-2 mt-4">
+    
+    <button
+      className="btn btn-xs md:btn-sm"
+      onClick={() => goToPage(currentPage - 1)}
+      disabled={currentPage === 1}
+    >
+      Précédent
+    </button>
+
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+      <button
+        key={page}
+        className={`btn btn-xs md:btn-sm ${
+          currentPage === page ? "btn-primary" : ""
+        }`}
+        onClick={() => goToPage(page)}
+      >
+        {page}
+      </button>
+    ))}
+
+    <button
+      className="btn btn-xs md:btn-sm"
+      onClick={() => goToPage(currentPage + 1)}
+      disabled={currentPage === totalPages}
+    >
+      Suivant
+    </button>
+
+  </div>
+)}
           </>
         )}
       </div>
