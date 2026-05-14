@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "synthwave";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  
+  --color-base-100: #09002f; /* Fallback */
+ 
+  --color-base-200: #120b3d; /* Fallback */
+
+  --color-base-300: #303547; /* Fallback */
+
+  --color-base-content: #C7C7D1; /* Fallback */
+
+  --color-primary: #e9003e; /* Fallback modifié */
+
+  --color-primary-content: #500323; /* Fallback */
+
+  --color-secondary: #71d1fe; /* Fallback */
+
+  --color-secondary-content: #042e49; /* Fallback */
+  
+  --color-accent: #F6AD55; /* Fallback */
+
+  --color-accent-content: #2F1E0F; /* Fallback */
+ 
+  --color-neutral: #e50076; /* Fallback */
+  
+  --color-neutral-content: #c6d2ff; /* Fallback */
+
+  --color-info: #00bafe; /* Fallback */
+
+  --color-info-content: #042e49; /* Fallback */
+
+  --color-success: #00d3bb; /* Fallback */
+ 
+  --color-success-content: #002d2c; /* Fallback */
+ 
+  --color-warning: #F6E05E; /* Fallback */
+
+  --color-warning-content: #4C2C0E; /* Fallback */
+  
+  --color-error: #ec8c78; /* Fallback */
+ 
+  --color-error-content: #201047; /* Fallback */
+ 
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Styles spécifiques pour Windows 7 */
+.is-windows-7 .bg-base-100 { background-color: #1A1F2B !important; }
+.is-windows-7 .bg-base-200 { background-color: #252A3B !important; }
+.is-windows-7 .bg-base-300 { background-color: #303547 !important; }
+.is-windows-7 .text-base-content { color: #C7C7D1 !important; }
+.is-windows-7 .bg-primary { background-color: #e9003e !important; } /* Modifié */
+.is-windows-7 .text-primary { color: #e9003e !important; } /* Modifié */
+.is-windows-7 .bg-primary-content { background-color: #2D1A1C !important; }
+.is-windows-7 .text-primary-content { color: #2D1A1C !important; }
+.is-windows-7 .bg-secondary { background-color: #A3BFFA !important; }
+.is-windows-7 .text-secondary { color: #A3BFFA !important; }
+.is-windows-7 .bg-secondary-content { background-color: #2A2E5B !important; }
+.is-windows-7 .text-secondary-content { color: #2A2E5B !important; }
+.is-windows-7 .bg-accent { background-color: #F6AD55 !important; }
+.is-windows-7 .text-accent { color: #F6AD55 !important; }
+.is-windows-7 .bg-accent-content { background-color: #2F1E0F !important; }
+.is-windows-7 .text-accent-content { color: #2F1E0F !important; }
+.is-windows-7 .bg-neutral { background-color: #E53E3E !important; }
+.is-windows-7 .text-neutral { color: #E53E3E !important; }
+.is-windows-7 .bg-neutral-content { background-color: #F7FAFC !important; }
+.is-windows-7 .text-neutral-content { color: #F7FAFC !important; }
+.is-windows-7 .bg-info { background-color: #63B3ED !important; }
+.is-windows-7 .text-info { color: #63B3ED !important; }
+.is-windows-7 .bg-info-content { background-color: #2A2E5B !important; }
+.is-windows-7 .text-info-content { color: #2A2E5B !important; }
+.is-windows-7 .bg-success { background-color: #68D391 !important; }
+.is-windows-7 .text-success { color: #68D391 !important; }
+.is-windows-7 .bg-success-content { background-color: #1A3C34 !important; }
+.is-windows-7 .text-success-content { color: #1A3C34 !important; }
+.is-windows-7 .bg-warning { background-color: #F6E05E !important; }
+.is-windows-7 .text-warning { color: #F6E05E !important; }
+.is-windows-7 .bg-warning-content { background-color: #4C2C0E !important; }
+.is-windows-7 .text-warning-content { color: #4C2C0E !important; }
+.is-windows-7 .bg-error { background-color: #FC8181 !important; }
+.is-windows-7 .text-error { color: #FC8181 !important; }
+.is-windows-7 .bg-error-content { background-color: #3B0F1A !important; }
+.is-windows-7 .text-error-content { color: #3B0F1A !important; }
+.is-windows-7 [data-lucide] { stroke: #e9003e !important; } /* Modifié */
+
+/* globals.css */
+.print-friendly {
+  background-color: white !important;
+  color: black !important;
+}
+
+.print-friendly * {
+  background-color: transparent !important;
+  color: black !important;
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+.wiggle-animation {
+  animation: wiggle 1.5s ease-in-out infinite;
+}
+
+/* React toastify override */
+:root {
+  --toastify-color-light: #ECE3CA;
+  --toastify-text-color-light: #793205;
+}
