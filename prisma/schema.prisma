@@ -93,8 +93,6 @@ model LiveClient {
   liveId       String
   clientId     String
   totalFacture Float       @default(0)
-  paymentMode PaymentMode @default(DIRECT)
-  remarks        String?
   createdAt    DateTime    @default(now())
   client       Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   live         Live        @relation(fields: [liveId], references: [id], onDelete: Cascade)
@@ -123,9 +121,4 @@ model Operation {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
-}
-
-enum PaymentMode {
-  DIRECT
-  MOBILE_MONEY
 }
