@@ -942,3 +942,6 @@ export async function readOperations(email: string): Promise<{
     throw new Error('Impossible de récupérer les opérations');
   }
 }
+
+
+
