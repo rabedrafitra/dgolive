@@ -270,7 +270,7 @@ const Page = () => {
       await loadLives();
 
       toast.success(
-        'La session de live est supprimée avec succès.'
+        'La session de live est supprimée avec succès!'
       );
     } catch (error) {
       console.error(error);
