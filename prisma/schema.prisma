@@ -89,14 +89,14 @@ model Client {
 }
 
 model LiveClient {
-  id           String      @id @default(uuid())
-  liveId       String
-  clientId     String
-  remarks      String?
-  createdAt    DateTime    @default(now())
-  client       Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  live         Live        @relation(fields: [liveId], references: [id], onDelete: Cascade)
-  orderItems   OrderItem[]
+  id         String      @id @default(uuid())
+  liveId     String
+  clientId   String
+  createdAt  DateTime    @default(now())
+  totalFacture Float     @default(0)
+  client     Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  live       Live        @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
 
   @@unique([liveId, clientId])
 }
@@ -122,4 +122,3 @@ model Operation {
   updatedAt     DateTime    @updatedAt
   association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
 }
-
