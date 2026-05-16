@@ -508,6 +508,7 @@ export async function createOrderItem({
         reference,
         quantity,
         unitPrice,
+        isDeliveredAndPaid: false,
       },
     });
 

@@ -69,7 +69,10 @@ const Page = () => {
             const clients =
               (await readClientsByLiveId(live.id, email)) || [];
 
-            const allOrders = Object.values(orders || {}).flat();
+            // const allOrders = Object.values(orders || {}).flat();
+            const allOrders = Object.values(orders ?? {})
+              .flat()
+              .filter(Boolean);
 
             // TOTAL ARTICLES
             const totalArticles = allOrders.length;
