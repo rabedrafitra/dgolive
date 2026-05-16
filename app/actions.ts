@@ -190,6 +190,8 @@ export async function readLives(email: string, date: Date = new Date()) {
     return [];
   }
 }
+
+
 export async function deleteLive(id: string, email: string) {
     if (!id || !email) {
         throw new Error("L'id, l'email de l'association et sont requis.")
