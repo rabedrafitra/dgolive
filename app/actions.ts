@@ -541,35 +541,70 @@ export async function createOrderItem({
 
 
 
+// export async function getOrdersByLiveId(liveId: string) {
+//   try {
+//     // Récupérer tous les liveClients associés au live
+//     const liveClients = await prisma.liveClient.findMany({
+//       where: {
+//         liveId,
+//       },
+//       include: {
+//         orderItems: true, // Inclure les orderItems associés à chaque liveClient
+//       },
+//     });
+
+//     // Formater les données pour correspondre à la structure de l'état orders
+//     const ordersByClient = liveClients.reduce((acc, liveClient) => {
+//       if (liveClient.orderItems.length > 0) {
+//         acc[liveClient.clientId] = liveClient.orderItems.map((order) => ({
+//           id: order.id,
+//           ref: order.reference,
+//           price: order.quantity * order.unitPrice,
+//           isDeliveredAndPaid: order.isDeliveredAndPaid, // Ajout du champ
+//         }));
+//       }
+//       return acc;
+//     }, {} as Record<string, { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }[]>);
+
+//     return ordersByClient;
+//   } catch (error) {
+//     console.error("Erreur lors de la récupération des commandes :", error);
+//     throw new Error("Impossible de charger les commandes.");
+//   }
+// }
+
 export async function getOrdersByLiveId(liveId: string) {
   try {
-    // Récupérer tous les liveClients associés au live
     const liveClients = await prisma.liveClient.findMany({
-      where: {
-        liveId,
-      },
+      where: { liveId },
       include: {
-        orderItems: true, // Inclure les orderItems associés à chaque liveClient
+        orderItems: true,
       },
     });
 
-    // Formater les données pour correspondre à la structure de l'état orders
-    const ordersByClient = liveClients.reduce((acc, liveClient) => {
-      if (liveClient.orderItems.length > 0) {
-        acc[liveClient.clientId] = liveClient.orderItems.map((order) => ({
-          id: order.id,
-          ref: order.reference,
-          price: order.quantity * order.unitPrice,
-          isDeliveredAndPaid: order.isDeliveredAndPaid, // Ajout du champ
-        }));
-      }
-      return acc;
-    }, {} as Record<string, { id: string; ref: string; price: number; isDeliveredAndPaid: boolean }[]>);
+    const ordersByClient: Record<
+      string,
+      {
+        id: string;
+        ref: string;
+        price: number;
+        isDeliveredAndPaid: boolean;
+      }[]
+    > = {};
+
+    for (const lc of liveClients) {
+      ordersByClient[lc.clientId] = lc.orderItems.map((order) => ({
+        id: order.id,
+        ref: order.reference ?? '',
+        price: (order.quantity ?? 0) * (order.unitPrice ?? 0),
+        isDeliveredAndPaid: !!order.isDeliveredAndPaid,
+      }));
+    }
 
     return ordersByClient;
   } catch (error) {
-    console.error("Erreur lors de la récupération des commandes :", error);
-    throw new Error("Impossible de charger les commandes.");
+    console.error("Erreur commandes :", error);
+    return {};
   }
 }
 
