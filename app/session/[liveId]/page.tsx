@@ -685,14 +685,14 @@ const handleSaveRemark = async () => {
                           title="Ajouter Article"
                           onClick={() => openOrderModal(client.id)}
                         >
-                          <PlusCircle className="w-4 h-4" />
+                          <PlusCircle className="w-3 h-3" />
                         </button>
                         <button
                           className="btn btn-sm"
                           title="Modifier Client"
                           onClick={() => openEditModal(client)}
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3 h-3" />
                         </button>
                         <button
                           className="btn btn-sm btn-info"
@@ -706,7 +706,7 @@ const handleSaveRemark = async () => {
                           title="Supprimer"
                           onClick={() => handleRemoveClientFromLive(client.id)}
                         >
-                          <Trash className="w-4 h-4" />
+                          <Trash className="w-3 h-3" />
                         </button>
                       </div>
                     </td>
@@ -719,7 +719,7 @@ const handleSaveRemark = async () => {
       title="Ajouter remarque"
       onClick={() => openRemarkModal(client)}
     >
-      <MessageSquare className="w-4 h-4" />
+      <MessageSquare className="w-3 h-3" />
     </button>
 
     {client.remarks &&
@@ -732,7 +732,7 @@ const handleSaveRemark = async () => {
             className="btn btn-sm btn-info"
             title="Voir remarque"
           >
-            <Info className="w-4 h-4" />
+            <Info className="w-3 h-3" />
           </button>
         </div>
       )}

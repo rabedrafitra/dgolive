@@ -489,7 +489,7 @@ const Page = () => {
                             href={`/session/${live.id}`}
                             title="Ouvrir Session"
                           >
-                            <CirclePlay className="w-4 h-4" />
+                            <CirclePlay className="w-3 h-3" />
                           </Link>
 
                           <button
@@ -501,7 +501,7 @@ const Page = () => {
                             }
                             title="Modifier"
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Pencil className="w-3 h-3" />
                           </button>
 
                           <button
@@ -513,7 +513,7 @@ const Page = () => {
                             }
                             title="Supprimer"
                           >
-                            <Trash className="w-4 h-4" />
+                            <Trash className="w-3 h-3" />
                           </button>
                         </div>
                       </td>
