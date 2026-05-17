@@ -680,7 +680,7 @@ const handleTogglePaymentMode = async (
                 <th className="text-lg">Actions</th>
                 <th className="text-lg">Remarque</th>
                 <th className="text-lg">Payé</th>
-                <th className="text-lg">MobileMoney</th>
+                <th className="text-lg">MVola</th>
               </tr>
             </thead>
           
