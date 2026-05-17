@@ -264,6 +264,7 @@ export async function readClientsByLiveId(
 
       liveClientId: lc.id,
       remarks: lc.remarks || '',
+      paymentMode: lc.paymentMode ?? null,
      
     }));
 
@@ -1014,7 +1015,27 @@ export type ClientWithRemark = {
   tel: string;
   associationId: string | null;
   createdAt: Date;
-
   liveClientId: string;
   remarks: string;
+  paymentMode: string | null; 
 };
+
+export async function updateLiveClientPaymentMode(
+  liveClientId: string,
+  isMobileMoney: boolean
+) {
+  const existing = await prisma.liveClient.findUnique({
+    where: { id: liveClientId },
+  });
+
+  if (!existing) {
+    throw new Error("LiveClient introuvable (update impossible)");
+  }
+
+  return await prisma.liveClient.update({
+    where: { id: liveClientId },
+    data: {
+      paymentMode: isMobileMoney ? "MOBILE_MONEY" : null,
+    },
+  });
+}

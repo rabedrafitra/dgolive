@@ -1,6 +1,6 @@
 'use client';
 
-import { readClientsByLiveId, searchClients, updateLiveClientRemark, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, createOperation, readOperations } from '@/app/actions';
+import { readClientsByLiveId, searchClients, updateLiveClientPaymentMode, updateLiveClientRemark, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, createOperation, readOperations } from '@/app/actions';
 import Wrapper from '@/app/components/Wrapper';
 import { useUser } from '@clerk/nextjs';
 import { Client, Live } from '@prisma/client';
@@ -501,6 +501,33 @@ const handleSaveRemark = async () => {
   }
 };
 
+const handleTogglePaymentMode = async (
+  liveClientId: string,
+  checked: boolean
+) => {
+  try {
+    const value = checked ? "MOBILE_MONEY" : null;
+
+    await updateLiveClientPaymentMode(liveClientId, checked);
+
+    setClients((prev) =>
+      prev.map((c) =>
+        c.liveClientId === liveClientId
+          ? { ...c, paymentMode: value }
+          : c
+      )
+    );
+
+    toast.success(
+      checked
+        ? "Paiement MobileMoney activé"
+        : "Paiement Direct activé"
+    );
+  } catch (error) {
+    console.error(error);
+    toast.error("Erreur mise à jour paymentMode");
+  }
+};
 
   return (
     <Wrapper>
@@ -595,50 +622,54 @@ const handleSaveRemark = async () => {
             <EmptyState message="Pas encore de Client" IconComponent="User" />
           </div>
         ) : (
-          <table className="table">
+         <table className="table w-full min-w-[1200px] max-w-7xl border border-base-300 rounded-lg shadow-md">
             <thead>
               <tr>
                 <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
                 </th>
               </tr>
-                            <tr>
-                <th colSpan={9} className="text-lg text-center py-3 bg-base-200">
-                  <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-base">
-                    <span>
-                      <strong>Total général :</strong>{' '}
-                      {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar
-                      <span className="text-blue-600 ml-2">
-                        ({Object.values(orders).flat().length} articles)
-                      </span>
-                    </span>
-                    
-                    <span>
-                      <strong>Clients :</strong>{' '}
-                      <span className="text-green-600 font-semibold">
-                        {clients.filter(client => (orders[client.id] || []).length > 0).length}
-                      </span>
-                    </span>
+                <tr>
+  <th colSpan={10} className="py-4 bg-base-200">
+    <div className="w-full flex justify-center">
+      <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-base text-center max-w-6xl">
+        
+        <span>
+          <strong>Total général :</strong>{' '}
+          {Object.values(orders).flat().reduce((sum, item) => sum + item.price, 0).toLocaleString('fr-FR')} Ar
+          <span className="text-blue-600 ml-2">
+            ({Object.values(orders).flat().length} articles)
+          </span>
+        </span>
 
-                    <span>
-                      <strong>Total Livré et Payé:</strong>{' '}
-                      <span className="text-green-600 font-semibold">
-                        {totalCollected.toLocaleString('fr-FR')} Ar
-                      </span>
-                    </span>
+        <span>
+          <strong>Clients :</strong>{' '}
+          <span className="text-green-600 font-semibold">
+            {clients.filter(client => (orders[client.id] || []).length > 0).length}
+          </span>
+        </span>
 
-                    <span>
-                      <strong>Clients livrés :</strong>{' '}
-                      <span className="text-green-600 font-semibold">
-                        {clients.filter(client => {
-                          const clientOrders = orders[client.id] || [];
-                          return clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid);
-                        }).length}
-                      </span>
-                    </span>
-                  </div>
-                </th>
-              </tr>
+        <span>
+          <strong>Total Livré et Payé :</strong>{' '}
+          <span className="text-green-600 font-semibold">
+            {totalCollected.toLocaleString('fr-FR')} Ar
+          </span>
+        </span>
+
+        <span>
+          <strong>Clients livrés :</strong>{' '}
+          <span className="text-green-600 font-semibold">
+            {clients.filter(client => {
+              const clientOrders = orders[client.id] || [];
+              return clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid);
+            }).length}
+          </span>
+        </span>
+
+      </div>
+    </div>
+  </th>
+</tr>
               <tr>
                 <th className="text-center"></th>
                 <th className="text-lg">Nom</th>
@@ -649,6 +680,7 @@ const handleSaveRemark = async () => {
                 <th className="text-lg">Actions</th>
                 <th className="text-lg">Remarque</th>
                 <th className="text-lg">Payé</th>
+                <th className="text-lg">MobileMoney</th>
               </tr>
             </thead>
           
@@ -662,7 +694,23 @@ const handleSaveRemark = async () => {
                 return (
                   <tr key={client.id}>
                     <th>{index + 1}</th>
-                    <td>{client.name}</td>
+                    <td>
+                          <div className="flex flex-col">
+                            <span>{client.name}</span>
+
+                            <span
+                              className={`badge badge-sm ${
+                                client.paymentMode === "MOBILE_MONEY"
+                                  ? "badge-primary"
+                                  : "badge-ghost"
+                              }`}
+                            >
+                              {client.paymentMode === "MOBILE_MONEY"
+                                ? "MobileMoney"
+                                : "Direct"}
+                            </span>
+                          </div>
+                        </td>
                     <td>{client.address}</td>
                     <td>{client.tel}</td>
                     <td className="w-64">
@@ -711,34 +759,34 @@ const handleSaveRemark = async () => {
                       </div>
                     </td>
 
-                          <td className="text-center">
-  <div className="flex items-center justify-center gap-2">
+               <td className="text-center">
+                      <div className="flex items-center justify-center gap-2">
 
-    <button
-      className="btn btn-sm btn-warning"
-      title="Ajouter remarque"
-      onClick={() => openRemarkModal(client)}
-    >
-      <MessageSquare className="w-3 h-3" />
-    </button>
+                        <button
+                          className="btn btn-sm btn-warning"
+                          title="Ajouter remarque"
+                          onClick={() => openRemarkModal(client)}
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                        </button>
 
-    {client.remarks &&
-      client.remarks.trim() !== '' && (
-        <div
-          className="tooltip"
-          data-tip={client.remarks}
-        >
-          <button
-            className="btn btn-sm btn-info"
-            title="Voir remarque"
-          >
-            <Info className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-  </div>
-</td>
-                            <td className="text-center">
+                        {client.remarks &&
+                          client.remarks.trim() !== '' && (
+                            <div
+                              className="tooltip"
+                              data-tip={client.remarks}
+                            >
+                              <button
+                                className="btn btn-sm btn-info"
+                                title="Voir remarque"
+                              >
+                                <Info className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                      </div>
+                    </td>
+                     <td className="text-center">
                       <input
                         type="checkbox"
                         checked={allPaid}
@@ -748,6 +796,17 @@ const handleSaveRemark = async () => {
                         title="Marquer tout comme payé"
                       />
                     </td>
+
+        <td className="text-center">
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={client.paymentMode === "MOBILE_MONEY"}
+               onChange={(e) =>
+  handleTogglePaymentMode(client.liveClientId, e.target.checked)
+}
+              />
+            </td>
                   </tr>
                 );
               })}
@@ -813,6 +872,8 @@ const handleSaveRemark = async () => {
               </tr>
             </tfoot>
           </table>
+
+          
         )}
       </div>
       <div className="mb-4">
