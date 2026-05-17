@@ -115,6 +115,17 @@
   }
 }
 
+/* .tooltip::before {
+  max-width: 600px;
+  max-height: 600px;
+  width: max-content;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.4;
+  z-index: 9999;
+} */
 .wiggle-animation {
   animation: wiggle 1.5s ease-in-out infinite;
 }
