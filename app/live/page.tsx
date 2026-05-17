@@ -333,6 +333,7 @@ const Page = () => {
       setCurrentPage(page);
     }
   };
+  
 
   return (
     <Wrapper>
@@ -425,7 +426,7 @@ const Page = () => {
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody>      
                 {currentLives.map(
                   (live, index) => (
                     <tr key={live.id}>
