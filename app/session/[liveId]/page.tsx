@@ -1,19 +1,19 @@
 'use client';
 
-import { readClientsByLiveId, searchClients, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, createOperation, readOperations } from '@/app/actions';
+import { readClientsByLiveId, searchClients, updateLiveClientRemark, addClientToLive, deleteOrderItem, readLiveById, createClient, updateOrderItem, updateClient, getOrdersByLiveId, deleteClientFromLive, createOrderItem, updateOrderItemStatus, createOperation, readOperations } from '@/app/actions';
 import Wrapper from '@/app/components/Wrapper';
 import { useUser } from '@clerk/nextjs';
 import { Client, Live } from '@prisma/client';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Pencil, Trash, PlusCircle, UserRoundPlus, Search } from 'lucide-react';
-import EmptyState from '@/app/components/EmptyState';
+import { Pencil, Trash, PlusCircle, UserRoundPlus, Search, MessageSquare, Info } from 'lucide-react';import EmptyState from '@/app/components/EmptyState';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ClientModal from '@/app/components/ClientModal';
 import OrderModal from '@/app/components/OrderModal';
 import Image from 'next/image';
 import * as XLSX from 'xlsx';
+import type { ClientWithRemark } from '@/app/actions';
 
 const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const { user } = useUser();
@@ -24,7 +24,8 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
-  const [clients, setClients] = useState<Client[]>([]);
+  // const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientWithRemark[]>([]);
   const [live, setLive] = useState<Live | null>(null);
   const [leftSearchQuery, setLeftSearchQuery] = useState('');
   const [leftSearchResults, setLeftSearchResults] = useState<Client[]>([]);
@@ -37,6 +38,10 @@ const Page = ({ params }: { params: Promise<{ liveId: string }> }) => {
   const [invoiceClient, setInvoiceClient] = useState<Client | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+
+  // Remarques
+const [remarkClient, setRemarkClient] = useState<ClientWithRemark | null>(null);
+const [remarkText, setRemarkText] = useState('');
 
 
   const totalCollected = clients.reduce((sum, client) => {
@@ -457,6 +462,46 @@ const handlePrintOrders = () => {
     XLSX.writeFile(wb, `Commandes_${live?.name || 'Session'}_${formattedDate}.xlsx`);
   };
 
+
+  //Fonctions Modal Remarque
+const openRemarkModal = (client: ClientWithRemark) => {
+  setRemarkClient(client);
+  setRemarkText(client.remarks || '');
+
+  (
+    document.getElementById('remark_modal') as HTMLDialogElement
+  )?.showModal();
+};
+
+const handleSaveRemark = async () => {
+  if (!remarkClient) return;
+
+  try {
+    await updateLiveClientRemark(
+      remarkClient.liveClientId,
+      remarkText
+    );
+
+    setClients((prev) =>
+      prev.map((c) =>
+        c.liveClientId === remarkClient.liveClientId
+          ? { ...c, remarks: remarkText }
+          : c
+      )
+    );
+
+    toast.success('Remarque enregistrée');
+
+    (
+      document.getElementById('remark_modal') as HTMLDialogElement
+    )?.close();
+  } catch (error) {
+    console.error(error);
+    toast.error('Erreur lors de l’enregistrement');
+  }
+};
+
+
   return (
     <Wrapper>
       <div className="overflow-x-auto">
@@ -602,76 +647,13 @@ const handlePrintOrders = () => {
                 <th className="text-lg">Articles</th>
                 <th className="text-lg">Total</th>
                 <th className="text-lg">Actions</th>
+                <th className="text-lg">Remarque</th>
                 <th className="text-lg">Payé</th>
               </tr>
             </thead>
-            {/* <tbody>
-              {clients.map((client, index) => (
-                <tr key={client.id}>
-                  <th>{index + 1}</th>
-                  <td>{client.name}</td>
-                  <td>{client.address}</td>
-                  <td>{client.tel}</td>
-                  <td className="w-64">
-                    {(orders[client.id] || []).map((order, idx) => (
-                      <div key={idx} className="text-sm">
-                        Réf {order.ref} - {order.price} Ar
-                      </div>
-                    ))}
-                    {(orders[client.id] || []).length === 0 && (
-                      <div className="text-sm text-gray-500">Aucun article</div>
-                    )}
-                  </td>
-                  <td className="font-semibold text-center">
-                    {(orders[client.id] || []).reduce((acc, cur) => acc + cur.price, 0)} Ar
-                  </td>
-                  <td className="align-middle">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        className="btn btn-sm btn-success"
-                        title="Ajouter Article"
-                        onClick={() => openOrderModal(client.id)}
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        title="Modifier Client"
-                        onClick={() => openEditModal(client)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-info"
-                        title="Facture"
-                        onClick={() => openInvoiceModal(client)}
-                      >
-                        📄
-                      </button>
-                      <button
-                        className="btn btn-sm btn-error"
-                        title="Supprimer"
-                        onClick={() => handleRemoveClientFromLive(client.id)}
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-             <td className="text-center">
-                      <input
-                        type="checkbox"
-                        checked={clientOrders.length > 0 && clientOrders.every(o => o.isDeliveredAndPaid)}
-                        onChange={(e) => handleClientPaymentToggle(client.id, e.target.checked)}
-                        className="checkbox checkbox-md"
-                        disabled={clientOrders.length === 0}
-                        title="Marquer tout comme payé"
-                      />
-                    </td>
-                </tr>
-              ))}
-            </tbody> */}
+          
 
-                        <tbody>
+            <tbody>
               {clients.map((client, index) => {
                 const clientOrders = orders[client.id] || [];
                 const clientTotal = clientOrders.reduce((acc, cur) => acc + cur.price, 0);
@@ -728,7 +710,35 @@ const handlePrintOrders = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="text-center">
+
+                          <td className="text-center">
+  <div className="flex items-center justify-center gap-2">
+
+    <button
+      className="btn btn-sm btn-warning"
+      title="Ajouter remarque"
+      onClick={() => openRemarkModal(client)}
+    >
+      <MessageSquare className="w-4 h-4" />
+    </button>
+
+    {client.remarks &&
+      client.remarks.trim() !== '' && (
+        <div
+          className="tooltip"
+          data-tip={client.remarks}
+        >
+          <button
+            className="btn btn-sm btn-info"
+            title="Voir remarque"
+          >
+            <Info className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+  </div>
+</td>
+                            <td className="text-center">
                       <input
                         type="checkbox"
                         checked={allPaid}
@@ -966,6 +976,41 @@ const handlePrintOrders = () => {
           </div>
         </dialog>
       )}
+
+      <dialog id="remark_modal" className="modal">
+  <div className="modal-box">
+
+    <h3 className="font-bold text-lg mb-4">
+      Remarque client
+    </h3>
+
+    <p className="font-semibold mb-3">
+      {remarkClient?.name}
+    </p>
+
+    <textarea
+      className="textarea textarea-bordered w-full h-32"
+      placeholder="Ajouter une remarque..."
+      value={remarkText}
+      onChange={(e) => setRemarkText(e.target.value)}
+    />
+
+    <div className="modal-action">
+      <form method="dialog">
+        <button className="btn">
+          Annuler
+        </button>
+      </form>
+
+      <button
+        className="btn btn-primary"
+        onClick={handleSaveRemark}
+      >
+        Enregistrer
+      </button>
+    </div>
+  </div>
+</dialog>
     </Wrapper>
   );
 };

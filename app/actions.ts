@@ -218,7 +218,7 @@ export async function deleteLive(id: string, email: string) {
 export async function readClientsByLiveId(
   liveId: string,
   email: string
-): Promise<Client[] | undefined> {
+): Promise<ClientWithRemark[] | undefined> {
   if (!email) {
     throw new Error("L'email de l'association est requis.");
   }
@@ -261,6 +261,9 @@ export async function readClientsByLiveId(
       tel: lc.client.tel || '',
       associationId: lc.client.associationId,
       createdAt: lc.client.createdAt,
+
+      liveClientId: lc.id,
+      remarks: lc.remarks || '',
      
     }));
 
@@ -271,6 +274,7 @@ export async function readClientsByLiveId(
     throw error; // Relancer l'erreur pour la gérer dans l'appelant
   }
 }
+
 export async function readLiveById(liveId: string, email: string): Promise<Live | undefined> {
   if (!email) {
     throw new Error("L'email de l'association est requis.");
@@ -983,3 +987,34 @@ export async function readOperations(email: string): Promise<{
 
 
 
+export async function updateLiveClientRemark(
+  liveClientId: string,
+  remarks: string
+) {
+  try {
+    return await prisma.liveClient.update({
+      where: {
+        id: liveClientId,
+      },
+
+      data: {
+        remarks,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export type ClientWithRemark = {
+  id: string;
+  name: string;
+  address: string;
+  tel: string;
+  associationId: string | null;
+  createdAt: Date;
+
+  liveClientId: string;
+  remarks: string;
+};
