@@ -622,8 +622,8 @@ const handleTogglePaymentMode = async (
             <EmptyState message="Pas encore de Client" IconComponent="User" />
           </div>
         ) : (
-         <table className="table w-full min-w-[1200px] max-w-7xl border border-base-300 rounded-lg shadow-md">
-            <thead>
+ <table className="table w-full">
+              <thead>
               <tr>
                 <th colSpan={9} className="text-3xl font-bold text-center py-4 text-primary">
                   {live ? `${live.name} — ${formattedDate}` : 'Détails du Live'}
